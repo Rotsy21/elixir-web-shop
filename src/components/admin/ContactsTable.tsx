@@ -25,13 +25,58 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 interface ContactsTableProps {
   contacts: ContactMessage[];
   isLoading: boolean;
 }
 
-export function ContactsTable({ contacts, isLoading }: ContactsTableProps) {
+export function ContactsTable({ contacts: initialContacts, isLoading }: ContactsTableProps) {
+  const [contacts, setContacts] = useState<ContactMessage[]>(initialContacts);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredContacts = contacts.filter(
+    (contact) =>
+      contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.id.toString().includes(searchTerm)
+  );
+
+  const handleViewDetails = (id: number) => {
+    toast({
+      title: "Voir les détails",
+      description: `Affichage des détails du message #${id}.`,
+    });
+    // Ici on pourrait ouvrir un modal avec les détails du message
+  };
+
+  const handleMarkAsRead = (id: number) => {
+    toast({
+      title: "Marquer comme lu",
+      description: `Message #${id} marqué comme lu.`,
+    });
+    // Ici on pourrait mettre à jour le statut du message
+  };
+
+  const handleDelete = (id: number) => {
+    setContacts(contacts.filter(contact => contact.id !== id));
+    toast({
+      title: "Message supprimé",
+      description: "Le message a été supprimé avec succès.",
+    });
+  };
+
+  const handleExport = () => {
+    toast({
+      title: "Export des messages",
+      description: "Les données des messages ont été exportées.",
+    });
+    // Ici on pourrait implémenter la logique d'export
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
@@ -41,7 +86,7 @@ export function ContactsTable({ contacts, isLoading }: ContactsTableProps) {
             Gérez les messages envoyés par les utilisateurs
           </CardDescription>
         </div>
-        <Button size="sm" variant="outline">
+        <Button size="sm" variant="outline" onClick={handleExport}>
           <Download className="mr-2 h-4 w-4" />
           Exporter
         </Button>
@@ -50,7 +95,12 @@ export function ContactsTable({ contacts, isLoading }: ContactsTableProps) {
         <div className="mb-4">
           <div className="relative">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher un message..." className="pl-8" />
+            <Input 
+              placeholder="Rechercher un message..." 
+              className="pl-8" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
           </div>
         </div>
         <div className="rounded-md border">
@@ -72,14 +122,14 @@ export function ContactsTable({ contacts, isLoading }: ContactsTableProps) {
                     Chargement des données...
                   </TableCell>
                 </TableRow>
-              ) : contacts.length === 0 ? (
+              ) : filteredContacts.length === 0 ? (
                 <TableRow>
                   <TableCell colSpan={6} className="text-center py-8">
                     Aucun message trouvé
                   </TableCell>
                 </TableRow>
               ) : (
-                contacts.map((contact) => (
+                filteredContacts.map((contact) => (
                   <TableRow key={contact.id}>
                     <TableCell>{contact.id}</TableCell>
                     <TableCell>{contact.name}</TableCell>
@@ -108,10 +158,17 @@ export function ContactsTable({ contacts, isLoading }: ContactsTableProps) {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem>Voir les détails</DropdownMenuItem>
-                          <DropdownMenuItem>Marquer comme lu</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleViewDetails(contact.id)}>
+                            Voir les détails
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleMarkAsRead(contact.id)}>
+                            Marquer comme lu
+                          </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-red-600">
+                          <DropdownMenuItem 
+                            className="text-red-600"
+                            onClick={() => handleDelete(contact.id)}
+                          >
                             Supprimer
                           </DropdownMenuItem>
                         </DropdownMenuContent>
