@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Product } from "@/models/types";
-import { Download, Edit, PlusCircle, Search, Trash2, Save } from "lucide-react";
+import { Download, Edit, PlusCircle, Search, Trash2, Save, Image, Upload } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { mongodbHelpers } from "@/data/mongodb";
 
 interface ProductsTableProps {
   products: Product[];
@@ -41,6 +42,7 @@ interface ProductFormData {
   category: string;
   stock: number;
   description: string;
+  image: string;
 }
 
 export function ProductsTable({ products: initialProducts, isLoading }: ProductsTableProps) {
@@ -48,12 +50,14 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
   const [searchTerm, setSearchTerm] = useState("");
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [currentProduct, setCurrentProduct] = useState<ProductFormData>({
     name: '',
     price: 0,
     category: '',
     stock: 0,
-    description: ''
+    description: '',
+    image: '/placeholder.svg'
   });
 
   const filteredProducts = products.filter(
@@ -75,25 +79,51 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
     setCurrentProduct(prev => ({ ...prev, [name]: parsedValue }));
   };
 
-  const handleDelete = (id: number) => {
-    setProducts(products.filter(product => product.id !== id));
-    toast({
-      title: "Produit supprimé",
-      description: "Le produit a été supprimé avec succès.",
-    });
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const imageUrl = event.target?.result as string;
+        setSelectedImage(imageUrl);
+        setCurrentProduct(prev => ({ ...prev, image: imageUrl }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      // Simuler l'appel à MongoDB
+      await mongodbHelpers.deleteProduct(id);
+      
+      setProducts(products.filter(product => product.id !== id));
+      toast({
+        title: "Produit supprimé",
+        description: "Le produit a été supprimé avec succès.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le produit.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleEdit = (id: number) => {
     const productToEdit = products.find(product => product.id === id);
     if (productToEdit) {
       setCurrentProduct({
-        id: productToEdit.id,
+        id: productToEdit.id as number,
         name: productToEdit.name,
         price: productToEdit.price,
         category: productToEdit.category,
         stock: productToEdit.stock,
-        description: productToEdit.description || ''
+        description: productToEdit.description || '',
+        image: productToEdit.image || '/placeholder.svg'
       });
+      setSelectedImage(productToEdit.image);
       setIsEditDialogOpen(true);
     }
   };
@@ -104,53 +134,79 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
       price: 0,
       category: '',
       stock: 0,
-      description: ''
+      description: '',
+      image: '/placeholder.svg'
     });
+    setSelectedImage(null);
     setIsAddDialogOpen(true);
   };
 
-  const handleSaveEdit = () => {
-    setProducts(prev => prev.map(product => 
-      product.id === currentProduct.id 
-        ? { 
-            ...product, 
-            name: currentProduct.name,
-            price: currentProduct.price,
-            category: currentProduct.category,
-            stock: currentProduct.stock,
-            description: currentProduct.description
-          } 
-        : product
-    ));
-    
-    setIsEditDialogOpen(false);
-    toast({
-      title: "Produit modifié",
-      description: "Le produit a été modifié avec succès.",
-    });
+  const handleSaveEdit = async () => {
+    try {
+      // Simuler l'appel à MongoDB
+      await mongodbHelpers.updateProduct(currentProduct.id as number, currentProduct);
+      
+      setProducts(prev => prev.map(product => 
+        product.id === currentProduct.id 
+          ? { 
+              ...product, 
+              name: currentProduct.name,
+              price: currentProduct.price,
+              category: currentProduct.category,
+              stock: currentProduct.stock,
+              description: currentProduct.description,
+              image: currentProduct.image
+            } 
+          : product
+      ));
+      
+      setIsEditDialogOpen(false);
+      toast({
+        title: "Produit modifié",
+        description: "Le produit a été modifié avec succès.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier le produit.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleSaveAdd = () => {
-    // Generate a new ID (in a real app, this would come from the backend)
-    const newId = Math.max(0, ...products.map(p => p.id)) + 1;
-    
-    const newProduct: Product = {
-      id: newId,
-      name: currentProduct.name,
-      price: currentProduct.price,
-      category: currentProduct.category,
-      stock: currentProduct.stock,
-      description: currentProduct.description,
-      image: '/placeholder.svg',
-      createdAt: new Date().toISOString()
-    };
-    
-    setProducts(prev => [...prev, newProduct]);
-    setIsAddDialogOpen(false);
-    toast({
-      title: "Produit ajouté",
-      description: "Le nouveau produit a été ajouté avec succès.",
-    });
+  const handleSaveAdd = async () => {
+    try {
+      // Generate a new ID (in a real app, this would come from the backend)
+      const newId = Math.max(0, ...products.map(p => p.id as number)) + 1;
+      
+      const newProduct: Product = {
+        id: newId.toString(),
+        name: currentProduct.name,
+        price: currentProduct.price,
+        category: currentProduct.category,
+        stock: currentProduct.stock,
+        description: currentProduct.description,
+        image: currentProduct.image || '/placeholder.svg',
+        featured: false,
+        createdAt: new Date()
+      };
+      
+      // Simuler l'appel à MongoDB
+      await mongodbHelpers.addProduct(newProduct);
+      
+      setProducts(prev => [...prev, newProduct]);
+      setIsAddDialogOpen(false);
+      toast({
+        title: "Produit ajouté",
+        description: "Le nouveau produit a été ajouté avec succès.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter le produit.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleExport = () => {
@@ -162,53 +218,95 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
   };
 
   const renderProductForm = () => (
-    <div className="space-y-4 py-2">
-      <div className="space-y-2">
-        <label htmlFor="name" className="text-sm font-medium">Nom du produit</label>
+    <div className="grid grid-cols-2 gap-4 py-2">
+      {/* Prévisualisation de l'image */}
+      <div className="col-span-2 flex flex-col items-center mb-2">
+        <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center overflow-hidden mb-2">
+          {selectedImage || currentProduct.image ? (
+            <img 
+              src={selectedImage || currentProduct.image} 
+              alt="Prévisualisation" 
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="text-gray-400 flex flex-col items-center">
+              <Image className="h-8 w-8 mb-1" />
+              <span className="text-xs">Aucune image</span>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex items-center">
+          <label className="cursor-pointer bg-primary text-white px-3 py-1 rounded-md text-sm flex items-center">
+            <Upload className="h-4 w-4 mr-1" />
+            Choisir une image
+            <input 
+              type="file" 
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageChange}
+            />
+          </label>
+        </div>
+      </div>
+      
+      {/* Champs du formulaire */}
+      <div>
+        <label htmlFor="name" className="text-sm font-medium block mb-1">Nom du produit</label>
         <Input 
           id="name"
           name="name"
           value={currentProduct.name}
           onChange={handleInputChange}
+          placeholder="Nom du produit"
         />
       </div>
-      <div className="space-y-2">
-        <label htmlFor="price" className="text-sm font-medium">Prix (€)</label>
+
+      <div>
+        <label htmlFor="price" className="text-sm font-medium block mb-1">Prix (€)</label>
         <Input 
           id="price"
           name="price"
           type="number"
+          step="0.01"
           value={currentProduct.price}
           onChange={handleInputChange}
+          placeholder="0.00"
         />
       </div>
-      <div className="space-y-2">
-        <label htmlFor="category" className="text-sm font-medium">Catégorie</label>
+
+      <div>
+        <label htmlFor="category" className="text-sm font-medium block mb-1">Catégorie</label>
         <Input 
           id="category"
           name="category"
           value={currentProduct.category}
           onChange={handleInputChange}
+          placeholder="Catégorie"
         />
       </div>
-      <div className="space-y-2">
-        <label htmlFor="stock" className="text-sm font-medium">Stock</label>
+
+      <div>
+        <label htmlFor="stock" className="text-sm font-medium block mb-1">Stock</label>
         <Input 
           id="stock"
           name="stock"
           type="number"
           value={currentProduct.stock}
           onChange={handleInputChange}
+          placeholder="0"
         />
       </div>
-      <div className="space-y-2">
-        <label htmlFor="description" className="text-sm font-medium">Description</label>
+
+      <div className="col-span-2">
+        <label htmlFor="description" className="text-sm font-medium block mb-1">Description</label>
         <textarea
           id="description"
           name="description"
-          className="w-full min-h-[100px] p-2 border rounded-md"
+          className="w-full min-h-[80px] p-2 border rounded-md"
           value={currentProduct.description}
           onChange={handleInputChange}
+          placeholder="Description du produit..."
         />
       </div>
     </div>
@@ -252,6 +350,7 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
               <TableHeader>
                 <TableRow>
                   <TableHead>ID</TableHead>
+                  <TableHead>Image</TableHead>
                   <TableHead>Nom</TableHead>
                   <TableHead>Prix</TableHead>
                   <TableHead>Catégorie</TableHead>
@@ -262,13 +361,13 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8">
                       Chargement des données...
                     </TableCell>
                   </TableRow>
                 ) : filteredProducts.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8">
+                    <TableCell colSpan={7} className="text-center py-8">
                       Aucun produit trouvé
                     </TableCell>
                   </TableRow>
@@ -276,6 +375,11 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
                   filteredProducts.map((product) => (
                     <TableRow key={product.id}>
                       <TableCell>{product.id}</TableCell>
+                      <TableCell>
+                        <div className="w-10 h-10 rounded-md overflow-hidden">
+                          <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+                        </div>
+                      </TableCell>
                       <TableCell>{product.name}</TableCell>
                       <TableCell>{product.price.toFixed(2)} €</TableCell>
                       <TableCell>{product.category}</TableCell>
@@ -292,14 +396,14 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEdit(product.id)}>
+                          <Button size="sm" variant="outline" onClick={() => handleEdit(product.id as number)}>
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline" 
                             className="text-red-500 hover:text-red-700"
-                            onClick={() => handleDelete(product.id)}
+                            onClick={() => handleDelete(product.id as number)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
