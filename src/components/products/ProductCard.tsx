@@ -18,18 +18,20 @@ export default function ProductCard({ product }: ProductCardProps) {
   return (
     <Card className="product-card overflow-hidden transition-all duration-300 hover:shadow-lg">
       <div className="aspect-square relative overflow-hidden bg-gray-100">
-        <img
-          src={product.image}
-          alt={product.name}
-          className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
-          onError={handleImageError}
-          loading="lazy"
-        />
-        {product.featured && (
-          <div className="absolute top-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded-full">
-            Populaire
-          </div>
-        )}
+        <Link to={`/products/${product.id}`}>
+          <img
+            src={product.image}
+            alt={product.name}
+            className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+            onError={handleImageError}
+            loading="lazy"
+          />
+          {product.featured && (
+            <div className="absolute top-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded-full">
+              Populaire
+            </div>
+          )}
+        </Link>
       </div>
       <CardContent className="pt-4">
         <h3 className="text-lg font-medium">{product.name}</h3>
