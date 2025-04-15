@@ -10,22 +10,41 @@ import {
 } from "@/components/ui/card";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { 
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage
+} from "@/components/ui/form";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { Building2, Mail, Phone, MapPin, Save } from "lucide-react";
+
+const settingsFormSchema = z.object({
+  companyName: z.string().min(1, "Le nom de l'entreprise est requis"),
+  email: z.string().email("Email invalide"),
+  phone: z.string().min(1, "Le numéro de téléphone est requis"),
+  address: z.string().min(1, "L'adresse est requise")
+});
+
+type SettingsFormValues = z.infer<typeof settingsFormSchema>;
 
 export function SettingsForm() {
-  const [formData, setFormData] = useState({
-    companyName: "Elixir Drinks",
-    email: "contact@elixir-drinks.com",
-    phone: "+33 1 23 45 67 89",
-    address: "123 Rue des Boissons, 75001 Paris, France"
+  const form = useForm<SettingsFormValues>({
+    resolver: zodResolver(settingsFormSchema),
+    defaultValues: {
+      companyName: "Elixir Drinks",
+      email: "contact@elixir-drinks.com",
+      phone: "+33 1 23 45 67 89",
+      address: "123 Rue des Boissons, 75001 Paris, France"
+    }
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = (values: SettingsFormValues) => {
+    console.log("Form values:", values);
     toast({
       title: "Paramètres sauvegardés",
       description: "Les modifications ont été enregistrées avec succès.",
@@ -42,43 +61,84 @@ export function SettingsForm() {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <form className="space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Nom de l'entreprise</label>
-            <Input 
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+            <FormField
+              control={form.control}
               name="companyName"
-              value={formData.companyName} 
-              onChange={handleChange}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center">
+                    <Building2 className="h-4 w-4 mr-2 text-primary" />
+                    Nom de l'entreprise
+                  </FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Email de contact</label>
-            <Input 
+            
+            <FormField
+              control={form.control}
               name="email"
-              value={formData.email} 
-              onChange={handleChange}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center">
+                    <Mail className="h-4 w-4 mr-2 text-primary" />
+                    Email de contact
+                  </FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Téléphone</label>
-            <Input 
+            
+            <FormField
+              control={form.control}
               name="phone"
-              value={formData.phone} 
-              onChange={handleChange}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center">
+                    <Phone className="h-4 w-4 mr-2 text-primary" />
+                    Téléphone
+                  </FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Adresse</label>
-            <Input 
+            
+            <FormField
+              control={form.control}
               name="address"
-              value={formData.address} 
-              onChange={handleChange}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-2 text-primary" />
+                    Adresse
+                  </FormLabel>
+                  <FormControl>
+                    <Input {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          </div>
-          <div className="pt-4">
-            <Button type="submit">Sauvegarder les modifications</Button>
-          </div>
-        </form>
+            
+            <div className="pt-4">
+              <Button type="submit" className="flex items-center">
+                <Save className="h-4 w-4 mr-2" />
+                Sauvegarder les modifications
+              </Button>
+            </div>
+          </form>
+        </Form>
       </CardContent>
     </Card>
   );

@@ -3,7 +3,20 @@ import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Menu, X, ShoppingCart, User } from "lucide-react";
+import { 
+  Menu, 
+  X, 
+  ShoppingCart, 
+  User, 
+  Home, 
+  Info, 
+  Package, 
+  MessageSquare, 
+  LogIn, 
+  UserPlus, 
+  LogOut, 
+  Settings 
+} from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,10 +31,10 @@ export default function Navbar() {
   const location = useLocation();
 
   const navigation = [
-    { name: "Accueil", href: "/" },
-    { name: "À Propos", href: "/about" },
-    { name: "Produits", href: "/products" },
-    { name: "Contact", href: "/contact" },
+    { name: "Accueil", href: "/", icon: <Home className="h-4 w-4 mr-2" /> },
+    { name: "À Propos", href: "/about", icon: <Info className="h-4 w-4 mr-2" /> },
+    { name: "Produits", href: "/products", icon: <Package className="h-4 w-4 mr-2" /> },
+    { name: "Contact", href: "/contact", icon: <MessageSquare className="h-4 w-4 mr-2" /> },
   ];
 
   const isActive = (path: string) => {
@@ -55,6 +68,7 @@ export default function Navbar() {
                     : "text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
+                {item.icon}
                 {item.name}
               </Link>
             ))}
@@ -73,27 +87,42 @@ export default function Navbar() {
                 <DropdownMenuContent align="end">
                   {isAdmin && (
                     <DropdownMenuItem asChild>
-                      <Link to="/admin" className="w-full">Tableau de bord</Link>
+                      <Link to="/admin" className="w-full flex items-center">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Tableau de bord
+                      </Link>
                     </DropdownMenuItem>
                   )}
                   <DropdownMenuItem asChild>
-                    <Link to="/profile" className="w-full">Mon profil</Link>
+                    <Link to="/profile" className="w-full flex items-center">
+                      <User className="h-4 w-4 mr-2" />
+                      Mon profil
+                    </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={logout}>Déconnexion</DropdownMenuItem>
+                  <DropdownMenuItem onClick={logout} className="flex items-center">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Déconnexion
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
               <>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/login">Connexion</Link>
+                <Button variant="ghost" size="sm" asChild className="flex items-center">
+                  <Link to="/login" className="flex items-center">
+                    <LogIn className="h-4 w-4 mr-2" />
+                    Connexion
+                  </Link>
                 </Button>
-                <Button size="sm" asChild>
-                  <Link to="/register">Créer un compte</Link>
+                <Button size="sm" asChild className="flex items-center">
+                  <Link to="/register" className="flex items-center">
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Créer un compte
+                  </Link>
                 </Button>
               </>
             )}
-            <Button variant="outline" size="icon">
+            <Button variant="outline" size="icon" className="flex items-center justify-center">
               <ShoppingCart className="h-4 w-4" />
             </Button>
           </div>
@@ -123,13 +152,14 @@ export default function Navbar() {
             <Link
               key={item.name}
               to={item.href}
-              className={`block px-3 py-2 text-base font-medium ${
+              className={`flex items-center px-3 py-2 text-base font-medium ${
                 isActive(item.href)
                   ? "text-primary bg-primary/10 border-l-4 border-primary"
                   : "text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
               }`}
               onClick={() => setIsOpen(false)}
             >
+              {item.icon}
               {item.name}
             </Link>
           ))}
@@ -138,17 +168,19 @@ export default function Navbar() {
               {isAdmin && (
                 <Link
                   to="/admin"
-                  className="block px-3 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+                  className="flex items-center px-3 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
                   onClick={() => setIsOpen(false)}
                 >
+                  <Settings className="h-4 w-4 mr-2" />
                   Tableau de bord
                 </Link>
               )}
               <Link
                 to="/profile"
-                className="block px-3 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+                className="flex items-center px-3 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
                 onClick={() => setIsOpen(false)}
               >
+                <User className="h-4 w-4 mr-2" />
                 Mon profil
               </Link>
               <button
@@ -156,8 +188,9 @@ export default function Navbar() {
                   logout();
                   setIsOpen(false);
                 }}
-                className="block w-full text-left px-3 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+                className="flex items-center w-full text-left px-3 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
               >
+                <LogOut className="h-4 w-4 mr-2" />
                 Déconnexion
               </button>
             </>
@@ -165,16 +198,18 @@ export default function Navbar() {
             <>
               <Link
                 to="/login"
-                className="block px-3 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+                className="flex items-center px-3 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
                 onClick={() => setIsOpen(false)}
               >
+                <LogIn className="h-4 w-4 mr-2" />
                 Connexion
               </Link>
               <Link
                 to="/register"
-                className="block px-3 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+                className="flex items-center px-3 py-2 text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
                 onClick={() => setIsOpen(false)}
               >
+                <UserPlus className="h-4 w-4 mr-2" />
                 Créer un compte
               </Link>
             </>
