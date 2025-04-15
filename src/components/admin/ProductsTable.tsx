@@ -1,6 +1,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Table,
   TableBody,
@@ -29,6 +30,7 @@ import {
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { mongodbHelpers } from "@/data/mongodb";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ProductsTableProps {
   products: Product[];
@@ -51,6 +53,7 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const isMobile = useIsMobile();
   const [currentProduct, setCurrentProduct] = useState<ProductFormData>({
     name: '',
     price: 0,
@@ -97,7 +100,7 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
       // Simuler l'appel à MongoDB
       await mongodbHelpers.deleteProduct(id);
       
-      setProducts(products.filter(product => product.id !== id));
+      setProducts(products.filter(product => Number(product.id) !== id));
       toast({
         title: "Produit supprimé",
         description: "Le produit a été supprimé avec succès.",
@@ -112,10 +115,10 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
   };
 
   const handleEdit = (id: number) => {
-    const productToEdit = products.find(product => product.id === id);
+    const productToEdit = products.find(product => Number(product.id) === id);
     if (productToEdit) {
       setCurrentProduct({
-        id: productToEdit.id as number,
+        id: Number(productToEdit.id),
         name: productToEdit.name,
         price: productToEdit.price,
         category: productToEdit.category,
@@ -147,7 +150,7 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
       await mongodbHelpers.updateProduct(currentProduct.id as number, currentProduct);
       
       setProducts(prev => prev.map(product => 
-        product.id === currentProduct.id 
+        Number(product.id) === currentProduct.id 
           ? { 
               ...product, 
               name: currentProduct.name,
@@ -177,7 +180,7 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
   const handleSaveAdd = async () => {
     try {
       // Generate a new ID (in a real app, this would come from the backend)
-      const newId = Math.max(0, ...products.map(p => p.id as number)) + 1;
+      const newId = Math.max(0, ...products.map(p => Number(p.id))) + 1;
       
       const newProduct: Product = {
         id: newId.toString(),
@@ -217,11 +220,11 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
     // Ici on pourrait implémenter la logique d'export
   };
 
-  const renderProductForm = () => (
-    <div className="grid grid-cols-2 gap-4 py-2">
-      {/* Prévisualisation de l'image */}
-      <div className="col-span-2 flex flex-col items-center mb-2">
-        <div className="w-32 h-32 border-2 border-dashed border-gray-300 rounded-md flex items-center justify-center overflow-hidden mb-2">
+  const renderCompactProductForm = () => (
+    <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-3 py-2`}>
+      {/* Image preview - made more compact */}
+      <div className={`${isMobile ? '' : 'col-span-2'} flex flex-row items-center gap-3 mb-1`}>
+        <div className="w-16 h-16 border border-gray-300 rounded-md flex items-center justify-center overflow-hidden">
           {selectedImage || currentProduct.image ? (
             <img 
               src={selectedImage || currentProduct.image} 
@@ -230,16 +233,15 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
             />
           ) : (
             <div className="text-gray-400 flex flex-col items-center">
-              <Image className="h-8 w-8 mb-1" />
-              <span className="text-xs">Aucune image</span>
+              <Image className="h-4 w-4" />
             </div>
           )}
         </div>
         
-        <div className="flex items-center">
-          <label className="cursor-pointer bg-primary text-white px-3 py-1 rounded-md text-sm flex items-center">
-            <Upload className="h-4 w-4 mr-1" />
-            Choisir une image
+        <div>
+          <label className="cursor-pointer bg-primary text-white px-2 py-1 rounded-md text-xs flex items-center">
+            <Upload className="h-3 w-3 mr-1" />
+            Image
             <input 
               type="file" 
               accept="image/*"
@@ -250,20 +252,21 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
         </div>
       </div>
       
-      {/* Champs du formulaire */}
+      {/* Form fields - more compact */}
       <div>
-        <label htmlFor="name" className="text-sm font-medium block mb-1">Nom du produit</label>
+        <label htmlFor="name" className="text-xs font-medium block mb-1">Nom</label>
         <Input 
           id="name"
           name="name"
           value={currentProduct.name}
           onChange={handleInputChange}
           placeholder="Nom du produit"
+          className="h-8 text-sm"
         />
       </div>
 
       <div>
-        <label htmlFor="price" className="text-sm font-medium block mb-1">Prix (€)</label>
+        <label htmlFor="price" className="text-xs font-medium block mb-1">Prix (€)</label>
         <Input 
           id="price"
           name="price"
@@ -272,22 +275,24 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
           value={currentProduct.price}
           onChange={handleInputChange}
           placeholder="0.00"
+          className="h-8 text-sm"
         />
       </div>
 
       <div>
-        <label htmlFor="category" className="text-sm font-medium block mb-1">Catégorie</label>
+        <label htmlFor="category" className="text-xs font-medium block mb-1">Catégorie</label>
         <Input 
           id="category"
           name="category"
           value={currentProduct.category}
           onChange={handleInputChange}
           placeholder="Catégorie"
+          className="h-8 text-sm"
         />
       </div>
 
       <div>
-        <label htmlFor="stock" className="text-sm font-medium block mb-1">Stock</label>
+        <label htmlFor="stock" className="text-xs font-medium block mb-1">Stock</label>
         <Input 
           id="stock"
           name="stock"
@@ -295,18 +300,20 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
           value={currentProduct.stock}
           onChange={handleInputChange}
           placeholder="0"
+          className="h-8 text-sm"
         />
       </div>
 
-      <div className="col-span-2">
-        <label htmlFor="description" className="text-sm font-medium block mb-1">Description</label>
-        <textarea
+      <div className={`${isMobile ? '' : 'col-span-2'}`}>
+        <label htmlFor="description" className="text-xs font-medium block mb-1">Description</label>
+        <Textarea
           id="description"
           name="description"
-          className="w-full min-h-[80px] p-2 border rounded-md"
+          className="min-h-[60px] text-sm"
           value={currentProduct.description}
           onChange={handleInputChange}
-          placeholder="Description du produit..."
+          placeholder="Description..."
+          rows={2}
         />
       </div>
     </div>
@@ -396,14 +403,14 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEdit(product.id as number)}>
+                          <Button size="sm" variant="outline" onClick={() => handleEdit(Number(product.id))}>
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline" 
                             className="text-red-500 hover:text-red-700"
-                            onClick={() => handleDelete(product.id as number)}
+                            onClick={() => handleDelete(Number(product.id))}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -420,7 +427,7 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
 
       {/* Edit Product Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className={`${isMobile ? 'max-w-[90%]' : 'sm:max-w-md'}`}>
           <DialogHeader>
             <DialogTitle>Modifier un produit</DialogTitle>
             <DialogDescription>
@@ -428,14 +435,14 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
             </DialogDescription>
           </DialogHeader>
           
-          {renderProductForm()}
+          {renderCompactProductForm()}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+          <DialogFooter className="mt-2 gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsEditDialogOpen(false)}>
               Annuler
             </Button>
-            <Button onClick={handleSaveEdit}>
-              <Save className="h-4 w-4 mr-2" />
+            <Button size="sm" onClick={handleSaveEdit}>
+              <Save className="h-4 w-4 mr-1" />
               Enregistrer
             </Button>
           </DialogFooter>
@@ -444,22 +451,22 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
 
       {/* Add Product Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className={`${isMobile ? 'max-w-[90%]' : 'sm:max-w-md'}`}>
           <DialogHeader>
             <DialogTitle>Ajouter un produit</DialogTitle>
             <DialogDescription>
-              Créez un nouveau produit dans votre catalogue
+              Créez un nouveau produit
             </DialogDescription>
           </DialogHeader>
           
-          {renderProductForm()}
+          {renderCompactProductForm()}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+          <DialogFooter className="mt-2 gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsAddDialogOpen(false)}>
               Annuler
             </Button>
-            <Button onClick={handleSaveAdd} disabled={!currentProduct.name}>
-              <Save className="h-4 w-4 mr-2" />
+            <Button size="sm" onClick={handleSaveAdd} disabled={!currentProduct.name}>
+              <Save className="h-4 w-4 mr-1" />
               Ajouter
             </Button>
           </DialogFooter>
