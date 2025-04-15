@@ -10,13 +10,20 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
+  // Fallback image en cas d'erreur de chargement
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    e.currentTarget.src = '/placeholder.svg';
+  };
+
   return (
     <Card className="product-card overflow-hidden transition-all duration-300 hover:shadow-lg">
-      <div className="aspect-square relative overflow-hidden">
+      <div className="aspect-square relative overflow-hidden bg-gray-100">
         <img
           src={product.image}
           alt={product.name}
           className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
+          onError={handleImageError}
+          loading="lazy"
         />
         {product.featured && (
           <div className="absolute top-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded-full">
