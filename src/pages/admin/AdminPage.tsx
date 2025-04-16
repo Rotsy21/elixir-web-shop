@@ -13,6 +13,7 @@ import {
   Mail,
   Settings,
   Search,
+  Database,
 } from "lucide-react";
 
 // Import the refactored components
@@ -22,6 +23,7 @@ import { UsersTable } from "@/components/admin/UsersTable";
 import { ContactsTable } from "@/components/admin/ContactsTable";
 import { NewslettersTable } from "@/components/admin/NewslettersTable";
 import { SettingsForm } from "@/components/admin/SettingsForm";
+import { MongoDBConnector } from "@/components/admin/MongoDBConnector";
 import { Input } from "@/components/ui/input";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 
@@ -101,6 +103,9 @@ export default function AdminPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AdminHeader />
           
+          {/* MongoDB Connector */}
+          <MongoDBConnector />
+          
           <div className="flex items-center mb-6">
             <div className="relative flex-grow max-w-md">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -139,6 +144,10 @@ export default function AdminPage() {
                 <Settings className="h-4 w-4 mr-2" />
                 Paramètres
               </TabsTrigger>
+              <TabsTrigger value="database" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Database className="h-4 w-4 mr-2" />
+                Base de données
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="dashboard">
@@ -168,6 +177,10 @@ export default function AdminPage() {
 
             <TabsContent value="settings">
               <SettingsForm />
+            </TabsContent>
+            
+            <TabsContent value="database">
+              <MongoDBConnector />
             </TabsContent>
           </Tabs>
         </div>

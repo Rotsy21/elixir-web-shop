@@ -66,6 +66,7 @@ export function ContactsTable({ contacts: initialContacts, isLoading }: Contacts
 
   const handleMarkAsRead = async (id: string) => {
     try {
+      // Mise à jour pour utiliser le champ 'read' qui existe maintenant
       await mongodbHelpers.updateContact(id, { read: true });
       toast({
         title: "Marquer comme lu",

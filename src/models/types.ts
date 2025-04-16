@@ -1,4 +1,5 @@
 
+
 export interface User {
   id: string;
   username: string;
@@ -26,6 +27,7 @@ export interface ContactMessage {
   email: string;
   subject: string;
   message: string;
+  read?: boolean; // Ajout du champ read optionnel
   createdAt: Date | string;
 }
 
@@ -34,3 +36,4 @@ export interface Newsletter {
   email: string;
   createdAt: Date | string;
 }
+

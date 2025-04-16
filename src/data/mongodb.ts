@@ -1,10 +1,9 @@
-
 // Configuration et utilitaires MongoDB pour l'application Elixir Drinks
 import { Product, User, ContactMessage, Newsletter } from "@/models/types";
 
 // Configuration MongoDB
 export const MONGODB_CONFIG = {
-  // Pour MongoDB local
+  // Pour MongoDB local (MongoDB Compass)
   localConnectionString: "mongodb://localhost:27017/elixir_drinks",
   
   // Pour MongoDB Atlas (remplacer avec vos identifiants)
@@ -24,6 +23,8 @@ export const MONGODB_CONFIG = {
 class MongoDBService {
   private static instance: MongoDBService;
   private isConnected: boolean = false;
+  private connectionError: string | null = null;
+  private connectionString: string = "";
   
   // Singleton pattern
   private constructor() {}
@@ -35,19 +36,46 @@ class MongoDBService {
     return MongoDBService.instance;
   }
 
-  // Simuler une connexion à MongoDB
-  public async connect(useAtlas: boolean = false): Promise<boolean> {
+  // Se connecter à MongoDB (local ou Atlas)
+  public async connect(useAtlas: boolean = false, customConnectionString?: string): Promise<boolean> {
     try {
-      console.log(`Connexion à MongoDB ${useAtlas ? 'Atlas' : 'local'}...`);
-      // Dans une vraie implémentation, cela utiliserait le client MongoDB
+      // Utiliser une chaîne de connexion personnalisée si fournie
+      if (customConnectionString) {
+        this.connectionString = customConnectionString;
+      } else {
+        this.connectionString = useAtlas 
+          ? MONGODB_CONFIG.atlasConnectionString 
+          : MONGODB_CONFIG.localConnectionString;
+      }
+      
+      console.log(`Tentative de connexion à MongoDB avec: ${this.connectionString}`);
+      
+      // Simulation réussie pour développement
+      // Dans une vraie application, ceci utiliserait le client MongoDB pour établir une connexion
+      // Exemple: 
+      // const client = await MongoClient.connect(this.connectionString);
+      // this.db = client.db();
+      
       this.isConnected = true;
+      this.connectionError = null;
       console.log('Connecté à MongoDB avec succès');
+      
       return true;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors de la connexion à MongoDB:', error);
       this.isConnected = false;
+      this.connectionError = error?.message || "Erreur de connexion inconnue";
       return false;
     }
+  }
+
+  // Vérifier l'état de la connexion
+  public getConnectionStatus(): { isConnected: boolean; error: string | null; connectionString: string } {
+    return {
+      isConnected: this.isConnected,
+      error: this.connectionError,
+      connectionString: this.connectionString
+    };
   }
 
   // Vérifier la connexion
@@ -188,121 +216,38 @@ export const mongodbService = MongoDBService.getInstance();
 // Exporter les fonctions utilitaires pour l'usage dans l'application
 export const mongodbHelpers = {
   // Ces fonctions sont des wrappers autour du service
-  getProducts: async (query = {}) => {
-    const products = await mongodbService.getProducts(query);
-    console.log('Products retrieved:', products);
-    return products;
-  },
-  
-  getProduct: async (id: string) => {
-    const product = await mongodbService.getProduct(id);
-    console.log(`Product ${id} retrieved:`, product);
-    return product;
-  },
-  
-  addProduct: async (product: Product) => {
-    const result = await mongodbService.addProduct(product);
-    console.log('Product added:', result);
-    return result;
-  },
-  
-  updateProduct: async (id: string, product: Partial<Product>) => {
-    const result = await mongodbService.updateProduct(id, product);
-    console.log(`Product ${id} updated:`, result);
-    return result;
-  },
-  
-  deleteProduct: async (id: string) => {
-    const result = await mongodbService.deleteProduct(id);
-    console.log(`Product ${id} deleted:`, result);
-    return result;
-  },
+  // ... keep existing code (getProducts, getProduct, addProduct, updateProduct, deleteProduct)
 
   // Users
-  getUsers: async (query = {}) => {
-    const users = await mongodbService.getUsers(query);
-    console.log('Users retrieved:', users);
-    return users;
-  },
-  
-  addUser: async (user: User) => {
-    const result = await mongodbService.addUser(user);
-    console.log('User added:', result);
-    return result;
-  },
-  
-  updateUser: async (id: string, user: Partial<User>) => {
-    const result = await mongodbService.updateUser(id, user);
-    console.log(`User ${id} updated:`, result);
-    return result;
-  },
-  
-  deleteUser: async (id: string) => {
-    const result = await mongodbService.deleteUser(id);
-    console.log(`User ${id} deleted:`, result);
-    return result;
-  },
+  // ... keep existing code (getUsers, addUser, updateUser, deleteUser)
 
   // Contacts
-  getContacts: async (query = {}) => {
-    const contacts = await mongodbService.getContacts(query);
-    console.log('Contacts retrieved:', contacts);
-    return contacts;
-  },
-  
-  addContact: async (contact: ContactMessage) => {
-    const result = await mongodbService.addContact(contact);
-    console.log('Contact added:', result);
-    return result;
-  },
-  
-  updateContact: async (id: string, contact: Partial<ContactMessage>) => {
-    const result = await mongodbService.updateContact(id, contact);
-    console.log(`Contact ${id} updated:`, result);
-    return result;
-  },
-  
-  deleteContact: async (id: string) => {
-    const result = await mongodbService.deleteContact(id);
-    console.log(`Contact ${id} deleted:`, result);
-    return result;
-  },
+  // ... keep existing code (getContacts, addContact, updateContact, deleteContact)
 
   // Newsletters
-  getNewsletters: async (query = {}) => {
-    const newsletters = await mongodbService.getNewsletters(query);
-    console.log('Newsletters retrieved:', newsletters);
-    return newsletters;
-  },
-  
-  addNewsletter: async (newsletter: Newsletter) => {
-    const result = await mongodbService.addNewsletter(newsletter);
-    console.log('Newsletter added:', result);
-    return result;
-  },
-  
-  updateNewsletter: async (id: string, newsletter: Partial<Newsletter>) => {
-    const result = await mongodbService.updateNewsletter(id, newsletter);
-    console.log(`Newsletter ${id} updated:`, result);
-    return result;
-  },
-  
-  deleteNewsletter: async (id: string) => {
-    const result = await mongodbService.deleteNewsletter(id);
-    console.log(`Newsletter ${id} deleted:`, result);
-    return result;
-  },
+  // ... keep existing code (getNewsletters, addNewsletter, updateNewsletter, deleteNewsletter)
 
   // Connexion à la base de données
-  connect: async (useAtlas = false) => {
-    return mongodbService.connect(useAtlas);
+  connect: async (useAtlas = false, customConnectionString?: string) => {
+    return mongodbService.connect(useAtlas, customConnectionString);
   },
   
   // Vérification de la connexion
   isConnected: () => {
     return mongodbService.isConnectedToDatabase();
+  },
+  
+  // Obtenir l'état détaillé de la connexion
+  getConnectionStatus: () => {
+    return mongodbService.getConnectionStatus();
   }
 };
 
-// Initialiser la connexion au démarrage (optionnel)
-// mongodbService.connect();
+// Ajouter un composant pour configurer la connexion MongoDB
+export function useMongoDBConnection() {
+  return {
+    connect: mongodbHelpers.connect,
+    getStatus: mongodbHelpers.getConnectionStatus,
+    isConnected: mongodbHelpers.isConnected
+  };
+}
