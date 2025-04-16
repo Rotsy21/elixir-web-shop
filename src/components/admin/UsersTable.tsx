@@ -45,7 +45,7 @@ interface UserFormData {
   id?: number;
   username: string;
   email: string;
-  role: string;
+  role: "admin" | "user";
   password?: string;
 }
 
@@ -74,7 +74,7 @@ export function UsersTable({ users: initialUsers, isLoading }: UsersTableProps) 
     setCurrentUser(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleRoleChange = (value: string) => {
+  const handleRoleChange = (value: "admin" | "user") => {
     setCurrentUser(prev => ({ ...prev, role: value }));
   };
 

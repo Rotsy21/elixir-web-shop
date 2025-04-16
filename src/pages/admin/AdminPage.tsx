@@ -12,6 +12,7 @@ import {
   MessageSquare,
   Mail,
   Settings,
+  Search,
 } from "lucide-react";
 
 // Import the refactored components
@@ -21,6 +22,8 @@ import { UsersTable } from "@/components/admin/UsersTable";
 import { ContactsTable } from "@/components/admin/ContactsTable";
 import { NewslettersTable } from "@/components/admin/NewslettersTable";
 import { SettingsForm } from "@/components/admin/SettingsForm";
+import { Input } from "@/components/ui/input";
+import { AdminHeader } from "@/components/admin/AdminHeader";
 
 export default function AdminPage() {
   const { user, isAdmin } = useAuth();
@@ -30,6 +33,7 @@ export default function AdminPage() {
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [searchTerm, setSearchTerm] = useState("");
 
   // If not admin, redirect to home
   if (!isAdmin) {
@@ -61,11 +65,53 @@ export default function AdminPage() {
     fetchData();
   }, []);
 
+  // Filter data based on search term
+  const filteredProducts = searchTerm 
+    ? products.filter(p => 
+        p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.description.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : products;
+  
+  const filteredUsers = searchTerm
+    ? users.filter(u => 
+        u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.role.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : users;
+
+  const filteredContacts = searchTerm
+    ? contacts.filter(c => 
+        c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        c.message.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : contacts;
+
+  const filteredNewsletters = searchTerm
+    ? newsletters.filter(n => 
+        n.email.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : newsletters;
+
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h1 className="text-2xl font-semibold text-gray-900 mb-6">Tableau de bord Admin</h1>
+          <AdminHeader />
+          
+          <div className="flex items-center mb-6">
+            <div className="relative flex-grow max-w-md">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Rechercher dans tous les tableaux..."
+                className="pl-8"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
 
           <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-8 bg-white p-1 rounded-md shadow-sm">
@@ -105,19 +151,19 @@ export default function AdminPage() {
             </TabsContent>
 
             <TabsContent value="products">
-              <ProductsTable products={products} isLoading={isLoading} />
+              <ProductsTable products={filteredProducts} isLoading={isLoading} />
             </TabsContent>
 
             <TabsContent value="users">
-              <UsersTable users={users} isLoading={isLoading} />
+              <UsersTable users={filteredUsers} isLoading={isLoading} />
             </TabsContent>
 
             <TabsContent value="contacts">
-              <ContactsTable contacts={contacts} isLoading={isLoading} />
+              <ContactsTable contacts={filteredContacts} isLoading={isLoading} />
             </TabsContent>
 
             <TabsContent value="newsletters">
-              <NewslettersTable newsletters={newsletters} isLoading={isLoading} />
+              <NewslettersTable newsletters={filteredNewsletters} isLoading={isLoading} />
             </TabsContent>
 
             <TabsContent value="settings">

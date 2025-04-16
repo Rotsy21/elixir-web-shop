@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Layout from "./components/layout/Layout";
 import { AuthProvider } from "./contexts/AuthContext";
+import ChatbotWidget from "./components/chatbot/ChatbotWidget";
 
 // Pages
 import HomePage from "./pages/HomePage";
@@ -39,6 +40,7 @@ const App = () => (
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<Layout><NotFound /></Layout>} />
           </Routes>
+          <ChatbotWidget />
         </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
