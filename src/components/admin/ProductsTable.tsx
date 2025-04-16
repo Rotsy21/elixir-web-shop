@@ -38,7 +38,7 @@ interface ProductsTableProps {
 }
 
 interface ProductFormData {
-  id?: number;
+  id?: string;
   name: string;
   price: number;
   category: string;
@@ -95,12 +95,12 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
     }
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     try {
-      // Simuler l'appel à MongoDB
+      // Appel à MongoDB
       await mongodbHelpers.deleteProduct(id);
       
-      setProducts(products.filter(product => Number(product.id) !== id));
+      setProducts(products.filter(product => product.id !== id));
       toast({
         title: "Produit supprimé",
         description: "Le produit a été supprimé avec succès.",
@@ -114,11 +114,11 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
     }
   };
 
-  const handleEdit = (id: number) => {
-    const productToEdit = products.find(product => Number(product.id) === id);
+  const handleEdit = (id: string) => {
+    const productToEdit = products.find(product => product.id === id);
     if (productToEdit) {
       setCurrentProduct({
-        id: Number(productToEdit.id),
+        id: productToEdit.id,
         name: productToEdit.name,
         price: productToEdit.price,
         category: productToEdit.category,
@@ -146,28 +146,30 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
 
   const handleSaveEdit = async () => {
     try {
-      // Simuler l'appel à MongoDB
-      await mongodbHelpers.updateProduct(currentProduct.id as number, currentProduct);
-      
-      setProducts(prev => prev.map(product => 
-        Number(product.id) === currentProduct.id 
-          ? { 
-              ...product, 
-              name: currentProduct.name,
-              price: currentProduct.price,
-              category: currentProduct.category,
-              stock: currentProduct.stock,
-              description: currentProduct.description,
-              image: currentProduct.image
-            } 
-          : product
-      ));
-      
-      setIsEditDialogOpen(false);
-      toast({
-        title: "Produit modifié",
-        description: "Le produit a été modifié avec succès.",
-      });
+      if (currentProduct.id) {
+        // Appel à MongoDB
+        await mongodbHelpers.updateProduct(currentProduct.id, currentProduct);
+        
+        setProducts(prev => prev.map(product => 
+          product.id === currentProduct.id 
+            ? { 
+                ...product, 
+                name: currentProduct.name,
+                price: currentProduct.price,
+                category: currentProduct.category,
+                stock: currentProduct.stock,
+                description: currentProduct.description,
+                image: currentProduct.image
+              } 
+            : product
+        ));
+        
+        setIsEditDialogOpen(false);
+        toast({
+          title: "Produit modifié",
+          description: "Le produit a été modifié avec succès.",
+        });
+      }
     } catch (error) {
       toast({
         title: "Erreur",
@@ -179,11 +181,9 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
 
   const handleSaveAdd = async () => {
     try {
-      // Generate a new ID (in a real app, this would come from the backend)
-      const newId = Math.max(0, ...products.map(p => Number(p.id))) + 1;
-      
+      // Création du nouveau produit
       const newProduct: Product = {
-        id: newId.toString(),
+        id: Math.random().toString(36).substring(2, 9), // Génération d'ID temporaire
         name: currentProduct.name,
         price: currentProduct.price,
         category: currentProduct.category,
@@ -191,18 +191,21 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
         description: currentProduct.description,
         image: currentProduct.image || '/placeholder.svg',
         featured: false,
-        createdAt: new Date()
+        createdAt: new Date().toISOString()
       };
       
-      // Simuler l'appel à MongoDB
-      await mongodbHelpers.addProduct(newProduct);
-      
-      setProducts(prev => [...prev, newProduct]);
-      setIsAddDialogOpen(false);
-      toast({
-        title: "Produit ajouté",
-        description: "Le nouveau produit a été ajouté avec succès.",
-      });
+      // Appel à MongoDB
+      const result = await mongodbHelpers.addProduct(newProduct);
+      if (result.success) {
+        // Mettre à jour avec l'ID généré par MongoDB
+        newProduct.id = result.id;
+        setProducts(prev => [...prev, newProduct]);
+        setIsAddDialogOpen(false);
+        toast({
+          title: "Produit ajouté",
+          description: "Le nouveau produit a été ajouté avec succès.",
+        });
+      }
     } catch (error) {
       toast({
         title: "Erreur",
@@ -403,14 +406,14 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Button size="sm" variant="outline" onClick={() => handleEdit(Number(product.id))}>
+                          <Button size="sm" variant="outline" onClick={() => handleEdit(product.id)}>
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button 
                             size="sm" 
                             variant="outline" 
                             className="text-red-500 hover:text-red-700"
-                            onClick={() => handleDelete(Number(product.id))}
+                            onClick={() => handleDelete(product.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

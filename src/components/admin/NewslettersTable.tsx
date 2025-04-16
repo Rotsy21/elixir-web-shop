@@ -28,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { mongodbHelpers } from "@/data/mongodb";
 
 interface NewslettersTableProps {
   newsletters: Newsletter[];
@@ -47,12 +48,21 @@ export function NewslettersTable({ newsletters: initialNewsletters, isLoading }:
       newsletter.id.toString().includes(searchTerm)
   );
 
-  const handleUnsubscribe = (id: number) => {
-    setNewsletters(newsletters.filter(newsletter => newsletter.id !== id));
-    toast({
-      title: "Abonné désabonné",
-      description: "L'abonné a été désabonné avec succès.",
-    });
+  const handleUnsubscribe = async (id: string) => {
+    try {
+      await mongodbHelpers.deleteNewsletter(id);
+      setNewsletters(newsletters.filter(newsletter => newsletter.id !== id));
+      toast({
+        title: "Abonné désabonné",
+        description: "L'abonné a été désabonné avec succès.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de désabonner l'utilisateur.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSendNewsletter = () => {

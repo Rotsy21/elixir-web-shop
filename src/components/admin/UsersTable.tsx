@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/select";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { mongodbHelpers } from "@/data/mongodb";
 
 interface UsersTableProps {
   users: User[];
@@ -42,7 +43,7 @@ interface UsersTableProps {
 }
 
 interface UserFormData {
-  id?: number;
+  id?: string;
   username: string;
   email: string;
   role: "admin" | "user";
@@ -78,15 +79,24 @@ export function UsersTable({ users: initialUsers, isLoading }: UsersTableProps) 
     setCurrentUser(prev => ({ ...prev, role: value }));
   };
 
-  const handleDelete = (id: number) => {
-    setUsers(users.filter(user => user.id !== id));
-    toast({
-      title: "Utilisateur supprimé",
-      description: "L'utilisateur a été supprimé avec succès.",
-    });
+  const handleDelete = async (id: string) => {
+    try {
+      await mongodbHelpers.deleteUser(id);
+      setUsers(users.filter(user => user.id !== id));
+      toast({
+        title: "Utilisateur supprimé",
+        description: "L'utilisateur a été supprimé avec succès.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer l'utilisateur.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleEdit = (id: number) => {
+  const handleEdit = (id: string) => {
     const userToEdit = users.find(user => user.id === id);
     if (userToEdit) {
       setCurrentUser({
@@ -109,43 +119,71 @@ export function UsersTable({ users: initialUsers, isLoading }: UsersTableProps) 
     setIsAddDialogOpen(true);
   };
 
-  const handleSaveEdit = () => {
-    setUsers(prev => prev.map(user => 
-      user.id === currentUser.id 
-        ? { 
-            ...user, 
-            username: currentUser.username,
-            email: currentUser.email,
-            role: currentUser.role
-          } 
-        : user
-    ));
-    
-    setIsEditDialogOpen(false);
-    toast({
-      title: "Utilisateur modifié",
-      description: "L'utilisateur a été modifié avec succès.",
-    });
+  const handleSaveEdit = async () => {
+    try {
+      if (currentUser.id) {
+        await mongodbHelpers.updateUser(currentUser.id, {
+          username: currentUser.username,
+          email: currentUser.email,
+          role: currentUser.role
+        });
+        
+        setUsers(prev => prev.map(user => 
+          user.id === currentUser.id 
+            ? { 
+                ...user, 
+                username: currentUser.username,
+                email: currentUser.email,
+                role: currentUser.role
+              } 
+            : user
+        ));
+        
+        setIsEditDialogOpen(false);
+        toast({
+          title: "Utilisateur modifié",
+          description: "L'utilisateur a été modifié avec succès.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de modifier l'utilisateur.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleSaveAdd = () => {
-    // Generate a new ID (in a real app, this would come from the backend)
-    const newId = Math.max(0, ...users.map(u => u.id)) + 1;
-    
-    const newUser: User = {
-      id: newId,
-      username: currentUser.username,
-      email: currentUser.email,
-      role: currentUser.role,
-      createdAt: new Date().toISOString()
-    };
-    
-    setUsers(prev => [...prev, newUser]);
-    setIsAddDialogOpen(false);
-    toast({
-      title: "Utilisateur ajouté",
-      description: "Le nouvel utilisateur a été ajouté avec succès.",
-    });
+  const handleSaveAdd = async () => {
+    try {
+      // Création du nouvel utilisateur
+      const newUser: User = {
+        id: Math.random().toString(36).substring(2, 9), // Génération d'ID temporaire
+        username: currentUser.username,
+        email: currentUser.email,
+        role: currentUser.role,
+        password: currentUser.password || '',
+        createdAt: new Date().toISOString()
+      };
+      
+      const result = await mongodbHelpers.addUser(newUser);
+      if (result.success) {
+        // Mettre à jour avec l'ID généré par MongoDB
+        newUser.id = result.id;
+        setUsers(prev => [...prev, newUser]);
+        setIsAddDialogOpen(false);
+        toast({
+          title: "Utilisateur ajouté",
+          description: "Le nouvel utilisateur a été ajouté avec succès.",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible d'ajouter l'utilisateur.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleExport = () => {

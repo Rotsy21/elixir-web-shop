@@ -5,7 +5,7 @@ export interface User {
   email: string;
   password: string;
   role: 'admin' | 'user';
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 export interface Product {
@@ -17,7 +17,7 @@ export interface Product {
   category: string;
   stock: number;
   featured: boolean;
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 export interface ContactMessage {
@@ -26,11 +26,11 @@ export interface ContactMessage {
   email: string;
   subject: string;
   message: string;
-  createdAt: Date;
+  createdAt: Date | string;
 }
 
 export interface Newsletter {
   id: string;
   email: string;
-  createdAt: Date;
+  createdAt: Date | string;
 }

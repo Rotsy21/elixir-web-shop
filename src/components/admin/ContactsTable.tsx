@@ -35,6 +35,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
+import { mongodbHelpers } from "@/data/mongodb";
 
 interface ContactsTableProps {
   contacts: ContactMessage[];
@@ -55,7 +56,7 @@ export function ContactsTable({ contacts: initialContacts, isLoading }: Contacts
       contact.id.toString().includes(searchTerm)
   );
 
-  const handleViewDetails = (id: number) => {
+  const handleViewDetails = (id: string) => {
     const contact = contacts.find(c => c.id === id);
     if (contact) {
       setViewContact(contact);
@@ -63,20 +64,37 @@ export function ContactsTable({ contacts: initialContacts, isLoading }: Contacts
     }
   };
 
-  const handleMarkAsRead = (id: number) => {
-    toast({
-      title: "Marquer comme lu",
-      description: `Message #${id} marqué comme lu.`,
-    });
-    // Ici on pourrait mettre à jour le statut du message
+  const handleMarkAsRead = async (id: string) => {
+    try {
+      await mongodbHelpers.updateContact(id, { read: true });
+      toast({
+        title: "Marquer comme lu",
+        description: `Message #${id} marqué comme lu.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de marquer le message comme lu.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const handleDelete = (id: number) => {
-    setContacts(contacts.filter(contact => contact.id !== id));
-    toast({
-      title: "Message supprimé",
-      description: "Le message a été supprimé avec succès.",
-    });
+  const handleDelete = async (id: string) => {
+    try {
+      await mongodbHelpers.deleteContact(id);
+      setContacts(contacts.filter(contact => contact.id !== id));
+      toast({
+        title: "Message supprimé",
+        description: "Le message a été supprimé avec succès.",
+      });
+    } catch (error) {
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le message.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleExport = () => {
