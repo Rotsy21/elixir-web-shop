@@ -1,3 +1,4 @@
+
 // Configuration et utilitaires MongoDB pour l'application Elixir Drinks
 import { Product, User, ContactMessage, Newsletter } from "@/models/types";
 
@@ -215,18 +216,34 @@ export const mongodbService = MongoDBService.getInstance();
 
 // Exporter les fonctions utilitaires pour l'usage dans l'application
 export const mongodbHelpers = {
-  // Ces fonctions sont des wrappers autour du service
-  // ... keep existing code (getProducts, getProduct, addProduct, updateProduct, deleteProduct)
+  // Products
+  getProducts: (query = {}) => mongodbService.getProducts(query),
+  getProduct: (id: string) => mongodbService.getProduct(id),
+  addProduct: (product: Product) => mongodbService.addProduct(product),
+  updateProduct: (id: string, update: Partial<Product>) => mongodbService.updateProduct(id, update),
+  deleteProduct: (id: string) => mongodbService.deleteProduct(id),
 
   // Users
-  // ... keep existing code (getUsers, addUser, updateUser, deleteUser)
+  getUsers: (query = {}) => mongodbService.getUsers(query),
+  getUser: (id: string) => mongodbService.getUser(id),
+  addUser: (user: User) => mongodbService.addUser(user),
+  updateUser: (id: string, update: Partial<User>) => mongodbService.updateUser(id, update),
+  deleteUser: (id: string) => mongodbService.deleteUser(id),
 
   // Contacts
-  // ... keep existing code (getContacts, addContact, updateContact, deleteContact)
+  getContacts: (query = {}) => mongodbService.getContacts(query),
+  getContact: (id: string) => mongodbService.getContact(id),
+  addContact: (contact: ContactMessage) => mongodbService.addContact(contact),
+  updateContact: (id: string, update: Partial<ContactMessage>) => mongodbService.updateContact(id, update),
+  deleteContact: (id: string) => mongodbService.deleteContact(id),
 
   // Newsletters
-  // ... keep existing code (getNewsletters, addNewsletter, updateNewsletter, deleteNewsletter)
-
+  getNewsletters: (query = {}) => mongodbService.getNewsletters(query),
+  getNewsletter: (id: string) => mongodbService.getNewsletter(id),
+  addNewsletter: (newsletter: Newsletter) => mongodbService.addNewsletter(newsletter),
+  updateNewsletter: (id: string, update: Partial<Newsletter>) => mongodbService.updateNewsletter(id, update),
+  deleteNewsletter: (id: string) => mongodbService.deleteNewsletter(id),
+  
   // Connexion à la base de données
   connect: async (useAtlas = false, customConnectionString?: string) => {
     return mongodbService.connect(useAtlas, customConnectionString);
