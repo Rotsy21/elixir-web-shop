@@ -1,51 +1,44 @@
 
 import { Link } from "react-router-dom";
-import { Product } from "@/models/types";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { ShoppingCart } from "lucide-react";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { Product } from "@/models/types";
+import AddToCartButton from "@/components/cart/AddToCartButton";
 
 interface ProductCardProps {
   product: Product;
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  // Fallback image en cas d'erreur de chargement
-  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    e.currentTarget.src = '/placeholder.svg';
-  };
-
   return (
-    <Card className="product-card overflow-hidden transition-all duration-300 hover:shadow-lg">
-      <div className="aspect-square relative overflow-hidden bg-gray-100">
-        <Link to={`/products/${product.id}`}>
+    <Card className="overflow-hidden h-full flex flex-col">
+      <Link to={`/products/${product.id}`}>
+        <AspectRatio ratio={1}>
           <img
-            src={product.image}
+            src={product.image || "/placeholder.svg"}
             alt={product.name}
-            className="object-cover w-full h-full transition-transform duration-300 hover:scale-105"
-            onError={handleImageError}
-            loading="lazy"
+            className="h-full w-full object-cover transition-all hover:scale-105"
           />
-          {product.featured && (
-            <div className="absolute top-2 right-2 bg-primary text-white text-xs px-2 py-1 rounded-full">
-              Populaire
-            </div>
-          )}
+        </AspectRatio>
+      </Link>
+      <CardContent className="p-4 flex-grow">
+        <Link to={`/products/${product.id}`}>
+          <h3 className="font-semibold text-lg hover:underline">{product.name}</h3>
         </Link>
-      </div>
-      <CardContent className="pt-4">
-        <h3 className="text-lg font-medium">{product.name}</h3>
-        <p className="text-sm text-gray-500 line-clamp-2 mt-1">{product.description}</p>
-        <div className="mt-2 text-primary font-semibold">{product.price.toFixed(2)} €</div>
+        <div className="flex items-center justify-between mt-1">
+          <p className="text-lg font-bold">{product.price.toFixed(2)} €</p>
+          {product.oldPrice && (
+            <p className="text-sm text-gray-500 line-through">
+              {product.oldPrice.toFixed(2)} €
+            </p>
+          )}
+        </div>
+        <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
+          {product.description}
+        </p>
       </CardContent>
-      <CardFooter className="flex justify-between pt-0">
-        <Button variant="outline" size="sm" asChild>
-          <Link to={`/products/${product.id}`}>Détails</Link>
-        </Button>
-        <Button size="sm" className="flex items-center gap-1">
-          <ShoppingCart className="h-4 w-4" />
-          <span>Ajouter</span>
-        </Button>
+      <CardFooter className="p-4 pt-0">
+        <AddToCartButton product={product} />
       </CardFooter>
     </Card>
   );
