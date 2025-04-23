@@ -1,9 +1,8 @@
-
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { getProducts, getUsers, getContacts, getNewsletters } from "@/data/mockData";
-import { Product, User, ContactMessage, Newsletter } from "@/models/types";
+import { Product, User, ContactMessage, Newsletter, Order } from "@/models/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart3,
@@ -14,9 +13,11 @@ import {
   Settings,
   Search,
   Database,
+  PackageOpen,
 } from "lucide-react";
+import { OrdersTable } from "@/components/admin/OrdersTable";
+import { orderService } from "@/services/orderService";
 
-// Import the refactored components
 import { Dashboard } from "@/components/admin/Dashboard";
 import { ProductsTable } from "@/components/admin/ProductsTable";
 import { UsersTable } from "@/components/admin/UsersTable";
@@ -33,11 +34,11 @@ export default function AdminPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [contacts, setContacts] = useState<ContactMessage[]>([]);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchTerm, setSearchTerm] = useState("");
 
-  // If not admin, redirect to home
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -46,17 +47,18 @@ export default function AdminPage() {
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [productsData, usersData, contactsData, newslettersData] = await Promise.all([
+        const [productsData, usersData, contactsData, newslettersData, ordersData] = await Promise.all([
           getProducts(),
           getUsers(),
           getContacts(),
           getNewsletters(),
+          orderService.getAllOrders(),
         ]);
-
         setProducts(productsData);
         setUsers(usersData);
         setContacts(contactsData);
         setNewsletters(newslettersData);
+        setOrders(ordersData);
       } catch (error) {
         console.error("Error fetching admin data:", error);
       } finally {
@@ -67,7 +69,6 @@ export default function AdminPage() {
     fetchData();
   }, []);
 
-  // Filter data based on search term
   const filteredProducts = searchTerm 
     ? products.filter(p => 
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -97,15 +98,20 @@ export default function AdminPage() {
       )
     : newsletters;
 
+  const filteredOrders = searchTerm
+    ? orders.filter(order =>
+        order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.status.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        order.userId.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : orders;
+
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AdminHeader />
-          
-          {/* MongoDB Connector */}
           <MongoDBConnector />
-          
           <div className="flex items-center mb-6">
             <div className="relative flex-grow max-w-md">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -117,7 +123,6 @@ export default function AdminPage() {
               />
             </div>
           </div>
-
           <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-8 bg-white p-1 rounded-md shadow-sm">
               <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-white">
@@ -140,6 +145,10 @@ export default function AdminPage() {
                 <Mail className="h-4 w-4 mr-2" />
                 Newsletter
               </TabsTrigger>
+              <TabsTrigger value="orders" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                <PackageOpen className="h-4 w-4 mr-2" />
+                Commandes
+              </TabsTrigger>
               <TabsTrigger value="settings" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Settings className="h-4 w-4 mr-2" />
                 Paramètres
@@ -149,7 +158,6 @@ export default function AdminPage() {
                 Base de données
               </TabsTrigger>
             </TabsList>
-
             <TabsContent value="dashboard">
               <Dashboard 
                 products={products} 
@@ -158,27 +166,24 @@ export default function AdminPage() {
                 newsletters={newsletters} 
               />
             </TabsContent>
-
             <TabsContent value="products">
               <ProductsTable products={filteredProducts} isLoading={isLoading} />
             </TabsContent>
-
             <TabsContent value="users">
               <UsersTable users={filteredUsers} isLoading={isLoading} />
             </TabsContent>
-
             <TabsContent value="contacts">
               <ContactsTable contacts={filteredContacts} isLoading={isLoading} />
             </TabsContent>
-
             <TabsContent value="newsletters">
               <NewslettersTable newsletters={filteredNewsletters} isLoading={isLoading} />
             </TabsContent>
-
+            <TabsContent value="orders">
+              <OrdersTable orders={filteredOrders} isLoading={isLoading} />
+            </TabsContent>
             <TabsContent value="settings">
               <SettingsForm />
             </TabsContent>
-            
             <TabsContent value="database">
               <MongoDBConnector />
             </TabsContent>

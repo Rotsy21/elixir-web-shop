@@ -31,7 +31,7 @@ export default function OrdersPage() {
       case 'pending': return "secondary";
       case 'paid': return "default";
       case 'shipped': return "outline";
-      case 'delivered': return "success";
+      case 'delivered': return "outline"; // "success" n'est pas supporté, doit être 'outline'
       case 'cancelled': return "destructive";
       default: return "outline";
     }
