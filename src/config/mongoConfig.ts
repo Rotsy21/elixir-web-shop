@@ -1,6 +1,7 @@
 
 export const MONGODB_CONFIG = {
   localConnectionString: "mongodb://localhost:27017/elixir_drinks",
+  isConnected: false, // Nouvel indicateur pour suivre l'état de la connexion
   
   options: {
     useNewUrlParser: true,
