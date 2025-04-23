@@ -5,22 +5,23 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, getTotalItems, getTotalPrice, clearCart } = useCart();
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
 
   const handleCheckout = () => {
-    setIsCheckingOut(true);
+    if (!user) {
+      navigate('/login', { state: { redirectTo: '/checkout' } });
+      return;
+    }
     
-    // Simulation d'un paiement
-    setTimeout(() => {
-      clearCart();
-      alert("Paiement réussi! Cette fonction sera connectée à Stripe ultérieurement.");
-      setIsCheckingOut(false);
-    }, 2000);
+    navigate('/checkout');
   };
 
   if (items.length === 0) {

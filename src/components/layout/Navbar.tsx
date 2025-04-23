@@ -3,9 +3,17 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { Menu, X, User } from "lucide-react";
+import { Menu, X, User, ShoppingBag } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import CartIndicator from "@/components/cart/CartIndicator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -69,11 +77,37 @@ export default function Navbar() {
           <CartIndicator />
           
           {user ? (
-            <div className="hidden md:flex md:items-center md:gap-2">
-              <span>Bonjour, {user.username}</span>
-              <Button variant="outline" onClick={logout}>
-                Déconnexion
-              </Button>
+            <div className="hidden md:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative rounded-full">
+                    <User className="h-5 w-5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end">
+                  <DropdownMenuLabel>Mon compte</DropdownMenuLabel>
+                  <DropdownMenuLabel className="font-normal">
+                    {user.username}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <Link to="/user/profile">
+                      <User className="mr-2 h-4 w-4" />
+                      <span>Mon profil</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/user/orders">
+                      <ShoppingBag className="mr-2 h-4 w-4" />
+                      <span>Mes commandes</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={logout}>
+                    Déconnexion
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           ) : (
             <div className="hidden md:block">
@@ -145,6 +179,22 @@ export default function Navbar() {
                   <User className="h-4 w-4" />
                   <span>Bonjour, {user.username}</span>
                 </div>
+                <Link
+                  to="/user/profile"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center pl-6 text-foreground/70 transition-colors hover:text-foreground"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Mon profil
+                </Link>
+                <Link
+                  to="/user/orders"
+                  onClick={() => setIsOpen(false)}
+                  className="flex items-center pl-6 text-foreground/70 transition-colors hover:text-foreground"
+                >
+                  <ShoppingBag className="h-4 w-4 mr-2" />
+                  Mes commandes
+                </Link>
                 <Button variant="outline" onClick={() => { logout(); setIsOpen(false); }}>
                   Déconnexion
                 </Button>

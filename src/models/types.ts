@@ -27,7 +27,7 @@ export interface ContactMessage {
   email: string;
   subject: string;
   message: string;
-  read?: boolean; // Ajout du champ read optionnel
+  read?: boolean;
   createdAt: Date | string;
 }
 
@@ -37,3 +37,30 @@ export interface Newsletter {
   createdAt: Date | string;
 }
 
+export interface OrderItem {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface Order {
+  id: string;
+  userId: string;
+  items: OrderItem[];
+  totalAmount: number;
+  status: 'pending' | 'paid' | 'shipped' | 'delivered' | 'cancelled';
+  shippingAddress: ShippingAddress;
+  paymentMethod: string;
+  createdAt: Date | string;
+}
+
+export interface ShippingAddress {
+  fullName: string;
+  addressLine1: string;
+  addressLine2?: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country: string;
+}
