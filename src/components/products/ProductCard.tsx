@@ -27,11 +27,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         </Link>
         <div className="flex items-center justify-between mt-1">
           <p className="text-lg font-bold">{product.price.toFixed(2)} €</p>
-          {product.oldPrice && (
-            <p className="text-sm text-gray-500 line-through">
-              {product.oldPrice.toFixed(2)} €
-            </p>
-          )}
+          {/* Suppression des références à oldPrice qui n'existe pas dans le type Product */}
         </div>
         <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
           {product.description}

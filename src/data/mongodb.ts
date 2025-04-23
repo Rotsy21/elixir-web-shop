@@ -1,15 +1,22 @@
 
-export { MONGODB_CONFIG } from '@/config/mongoConfig';
-export { useMongoDBConnection } from '@/hooks/useMongoDBConnection';
-export { productService } from '@/services/productService';
-export { userService } from '@/services/userService';
-export { contactService } from '@/services/contactService';
-export { newsletterService } from '@/services/newsletterService';
+// Importation des services
+import { ProductService } from "@/services/productService";
+import { UserService } from "@/services/userService";
+import { ContactService } from "@/services/contactService";
+import { NewsletterService } from "@/services/newsletterService";
 
-// Pour la rétrocompatibilité, on exporte aussi mongodbHelpers
-export const mongodbHelpers = {
-  ...productService,
-  ...userService,
-  ...contactService,
-  ...newsletterService
+// Initialisation des services
+const productService = new ProductService();
+const userService = new UserService();
+const contactService = new ContactService();
+const newsletterService = new NewsletterService();
+
+// Exportation des services pour utilisation dans l'application
+export {
+  productService,
+  userService,
+  contactService,
+  newsletterService
 };
+
+// Autres exports existants si présents

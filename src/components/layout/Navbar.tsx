@@ -4,13 +4,13 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { Menu, X, User } from "lucide-react";
-import { useMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "@/hooks/use-mobile";
 import CartIndicator from "@/components/cart/CartIndicator";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const { user, logout, isAdmin } = useAuth();
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
