@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Order } from "@/models/types";
+import { sanitizeInput } from "@/utils/securityUtils";
 
 interface OrdersTableProps {
   orders: Order[];
@@ -84,11 +85,11 @@ export function OrdersTable({ orders, isLoading }: OrdersTableProps) {
           ) : (
             orders.map((order) => (
               <TableRow key={order.id}>
-                <TableCell className="font-mono">{order.id.substring(0, 8)}</TableCell>
+                <TableCell className="font-mono">{sanitizeInput(order.id.substring(0, 8))}</TableCell>
                 <TableCell>
                   {format(new Date(order.createdAt), "dd/MM/yyyy", { locale: fr })}
                 </TableCell>
-                <TableCell>{order.userId}</TableCell>
+                <TableCell>{sanitizeInput(order.userId)}</TableCell>
                 <TableCell>{order.totalAmount.toFixed(2)} €</TableCell>
                 <TableCell>
                   <Badge variant={getStatusBadgeVariant(order.status)}>
@@ -98,21 +99,21 @@ export function OrdersTable({ orders, isLoading }: OrdersTableProps) {
                 <TableCell>
                   {order.items.map((item, idx) => (
                     <div key={idx}>
-                      {item.quantity}x {item.productName}
+                      {item.quantity}x {sanitizeInput(item.productName)}
                     </div>
                   ))}
                 </TableCell>
                 <TableCell>
                   <div>
-                    {order.shippingAddress.fullName}<br />
-                    {order.shippingAddress.addressLine1}
+                    {sanitizeInput(order.shippingAddress.fullName)}<br />
+                    {sanitizeInput(order.shippingAddress.addressLine1)}
                     {order.shippingAddress.addressLine2 && (
-                      <><br />{order.shippingAddress.addressLine2}</>
+                      <><br />{sanitizeInput(order.shippingAddress.addressLine2)}</>
                     )}
                     <br />
-                    {order.shippingAddress.postalCode} {order.shippingAddress.city}
+                    {sanitizeInput(order.shippingAddress.postalCode)} {sanitizeInput(order.shippingAddress.city)}
                     <br />
-                    {order.shippingAddress.state}, {order.shippingAddress.country}
+                    {sanitizeInput(order.shippingAddress.state)}, {sanitizeInput(order.shippingAddress.country)}
                   </div>
                 </TableCell>
               </TableRow>
@@ -123,4 +124,3 @@ export function OrdersTable({ orders, isLoading }: OrdersTableProps) {
     </div>
   );
 }
-
