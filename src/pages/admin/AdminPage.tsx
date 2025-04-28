@@ -15,7 +15,8 @@ import {
   Newsletter, 
   Order,
   Promotion,
-  DeveloperSpecialty 
+  DeveloperSpecialty,
+  SiteStatistics
 } from "@/models/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -42,11 +43,13 @@ import { SettingsForm } from "@/components/admin/SettingsForm";
 import { MongoDBConnector } from "@/components/admin/MongoDBConnector";
 import { PromotionsTable } from "@/components/admin/PromotionsTable";
 import { SpecialtiesTable } from "@/components/admin/SpecialtiesTable";
+import { StatisticsTable } from "@/components/admin/StatisticsTable";
 import { Input } from "@/components/ui/input";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { applySecurityHeaders } from "@/utils/securityMiddleware";
 import { promotionService } from "@/services/promotionService";
 import { developerSpecialtyService } from "@/services/developerSpecialtyService";
+import { statisticsService } from "@/services/statisticsService";
 
 export default function AdminPage() {
   const { user, isAdmin } = useAuth();
@@ -57,6 +60,7 @@ export default function AdminPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [specialties, setSpecialties] = useState<DeveloperSpecialty[]>([]);
+  const [statistics, setStatistics] = useState<SiteStatistics[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchTerm, setSearchTerm] = useState("");
@@ -79,7 +83,8 @@ export default function AdminPage() {
           newslettersData, 
           ordersData,
           promotionsData,
-          specialtiesData
+          specialtiesData,
+          statisticsData
         ] = await Promise.all([
           getProducts(),
           getUsers(),
@@ -88,6 +93,7 @@ export default function AdminPage() {
           orderService.getAllOrders(),
           promotionService.getAllPromotions(),
           developerSpecialtyService.getAllSpecialties(),
+          statisticsService.getAllStatistics(),
         ]);
         
         setProducts(productsData);
@@ -97,6 +103,7 @@ export default function AdminPage() {
         setOrders(ordersData);
         setPromotions(promotionsData);
         setSpecialties(specialtiesData);
+        setStatistics(statisticsData);
       } catch (error) {
         console.error("Erreur lors du chargement des données admin:", error);
       } finally {
@@ -159,6 +166,8 @@ export default function AdminPage() {
       )
     : specialties;
 
+  // Les statistiques n'ont pas besoin d'être filtrées car elles sont affichées différemment
+
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="py-6">
@@ -210,6 +219,10 @@ export default function AdminPage() {
                 <Star className="h-4 w-4 mr-2" />
                 Spécialités
               </TabsTrigger>
+              <TabsTrigger value="statistics" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Statistiques
+              </TabsTrigger>
               <TabsTrigger value="settings" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Settings className="h-4 w-4 mr-2" />
                 Paramètres
@@ -255,6 +268,10 @@ export default function AdminPage() {
             
             <TabsContent value="specialties">
               <SpecialtiesTable specialties={filteredSpecialties} isLoading={isLoading} />
+            </TabsContent>
+            
+            <TabsContent value="statistics">
+              <StatisticsTable statistics={statistics} isLoading={isLoading} />
             </TabsContent>
             
             <TabsContent value="settings">

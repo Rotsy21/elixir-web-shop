@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useOrder } from "@/contexts/OrderContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -55,7 +54,9 @@ export default function OrdersPage() {
           <ShoppingBag className="h-16 w-16 mb-4 text-muted-foreground" />
           <h1 className="text-2xl font-bold mb-2">Connectez-vous pour voir vos commandes</h1>
           <p className="text-muted-foreground mb-6">Vous devez être connecté pour accéder à vos commandes</p>
-          <Button onClick={() => navigate('/login')}>Se connecter</Button>
+          <Button variant="outline" size="sm">
+            Se connecter
+          </Button>
         </div>
       </div>
     );
@@ -74,7 +75,9 @@ export default function OrdersPage() {
           <PackageOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h2 className="text-xl font-semibold mb-2">Aucune commande</h2>
           <p className="text-muted-foreground mb-6">Vous n'avez pas encore passé de commande</p>
-          <Button onClick={() => navigate('/products')}>Découvrir nos produits</Button>
+          <Button variant="outline" size="sm">
+            Découvrir nos produits
+          </Button>
         </div>
       ) : (
         <Tabs defaultValue="all" className="w-full">
