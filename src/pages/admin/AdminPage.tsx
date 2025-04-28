@@ -1,8 +1,22 @@
+
 import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { getProducts, getUsers, getContacts, getNewsletters } from "@/data/mockData";
-import { Product, User, ContactMessage, Newsletter, Order } from "@/models/types";
+import { 
+  getProducts, 
+  getUsers, 
+  getContacts, 
+  getNewsletters 
+} from "@/data/mockData";
+import { 
+  Product, 
+  User, 
+  ContactMessage, 
+  Newsletter, 
+  Order,
+  Promotion,
+  DeveloperSpecialty 
+} from "@/models/types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   BarChart3,
@@ -14,10 +28,11 @@ import {
   Search,
   Database,
   PackageOpen,
+  Percent,
+  Star
 } from "lucide-react";
 import { OrdersTable } from "@/components/admin/OrdersTable";
 import { orderService } from "@/services/orderService";
-
 import { Dashboard } from "@/components/admin/Dashboard";
 import { ProductsTable } from "@/components/admin/ProductsTable";
 import { UsersTable } from "@/components/admin/UsersTable";
@@ -25,8 +40,13 @@ import { ContactsTable } from "@/components/admin/ContactsTable";
 import { NewslettersTable } from "@/components/admin/NewslettersTable";
 import { SettingsForm } from "@/components/admin/SettingsForm";
 import { MongoDBConnector } from "@/components/admin/MongoDBConnector";
+import { PromotionsTable } from "@/components/admin/PromotionsTable";
+import { SpecialtiesTable } from "@/components/admin/SpecialtiesTable";
 import { Input } from "@/components/ui/input";
 import { AdminHeader } from "@/components/admin/AdminHeader";
+import { applySecurityHeaders } from "@/utils/securityMiddleware";
+import { promotionService } from "@/services/promotionService";
+import { developerSpecialtyService } from "@/services/developerSpecialtyService";
 
 export default function AdminPage() {
   const { user, isAdmin } = useAuth();
@@ -35,6 +55,8 @@ export default function AdminPage() {
   const [contacts, setContacts] = useState<ContactMessage[]>([]);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
+  const [specialties, setSpecialties] = useState<DeveloperSpecialty[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchTerm, setSearchTerm] = useState("");
@@ -44,23 +66,39 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
+    // Appliquer les en-têtes de sécurité
+    applySecurityHeaders();
+    
     const fetchData = async () => {
       setIsLoading(true);
       try {
-        const [productsData, usersData, contactsData, newslettersData, ordersData] = await Promise.all([
+        const [
+          productsData, 
+          usersData, 
+          contactsData, 
+          newslettersData, 
+          ordersData,
+          promotionsData,
+          specialtiesData
+        ] = await Promise.all([
           getProducts(),
           getUsers(),
           getContacts(),
           getNewsletters(),
           orderService.getAllOrders(),
+          promotionService.getAllPromotions(),
+          developerSpecialtyService.getAllSpecialties(),
         ]);
+        
         setProducts(productsData);
         setUsers(usersData);
         setContacts(contactsData);
         setNewsletters(newslettersData);
         setOrders(ordersData);
+        setPromotions(promotionsData);
+        setSpecialties(specialtiesData);
       } catch (error) {
-        console.error("Error fetching admin data:", error);
+        console.error("Erreur lors du chargement des données admin:", error);
       } finally {
         setIsLoading(false);
       }
@@ -106,6 +144,21 @@ export default function AdminPage() {
       )
     : orders;
 
+  const filteredPromotions = searchTerm
+    ? promotions.filter(p => 
+        p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (p.couponCode && p.couponCode.toLowerCase().includes(searchTerm.toLowerCase()))
+      )
+    : promotions;
+    
+  const filteredSpecialties = searchTerm
+    ? specialties.filter(s => 
+        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        s.description.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : specialties;
+
   return (
     <div className="bg-gray-100 min-h-screen">
       <div className="py-6">
@@ -124,7 +177,7 @@ export default function AdminPage() {
             </div>
           </div>
           <Tabs defaultValue="dashboard" value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-8 bg-white p-1 rounded-md shadow-sm">
+            <TabsList className="mb-8 bg-white p-1 rounded-md shadow-sm overflow-x-auto flex-nowrap">
               <TabsTrigger value="dashboard" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                 <BarChart3 className="h-4 w-4 mr-2" />
                 Tableau de bord
@@ -149,6 +202,14 @@ export default function AdminPage() {
                 <PackageOpen className="h-4 w-4 mr-2" />
                 Commandes
               </TabsTrigger>
+              <TabsTrigger value="promotions" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Percent className="h-4 w-4 mr-2" />
+                Promotions
+              </TabsTrigger>
+              <TabsTrigger value="specialties" className="data-[state=active]:bg-primary data-[state=active]:text-white">
+                <Star className="h-4 w-4 mr-2" />
+                Spécialités
+              </TabsTrigger>
               <TabsTrigger value="settings" className="data-[state=active]:bg-primary data-[state=active]:text-white">
                 <Settings className="h-4 w-4 mr-2" />
                 Paramètres
@@ -158,6 +219,7 @@ export default function AdminPage() {
                 Base de données
               </TabsTrigger>
             </TabsList>
+            
             <TabsContent value="dashboard">
               <Dashboard 
                 products={products} 
@@ -166,24 +228,39 @@ export default function AdminPage() {
                 newsletters={newsletters} 
               />
             </TabsContent>
+            
             <TabsContent value="products">
               <ProductsTable products={filteredProducts} isLoading={isLoading} />
             </TabsContent>
+            
             <TabsContent value="users">
               <UsersTable users={filteredUsers} isLoading={isLoading} />
             </TabsContent>
+            
             <TabsContent value="contacts">
               <ContactsTable contacts={filteredContacts} isLoading={isLoading} />
             </TabsContent>
+            
             <TabsContent value="newsletters">
               <NewslettersTable newsletters={filteredNewsletters} isLoading={isLoading} />
             </TabsContent>
+            
             <TabsContent value="orders">
               <OrdersTable orders={filteredOrders} isLoading={isLoading} />
             </TabsContent>
+            
+            <TabsContent value="promotions">
+              <PromotionsTable promotions={filteredPromotions} isLoading={isLoading} />
+            </TabsContent>
+            
+            <TabsContent value="specialties">
+              <SpecialtiesTable specialties={filteredSpecialties} isLoading={isLoading} />
+            </TabsContent>
+            
             <TabsContent value="settings">
               <SettingsForm />
             </TabsContent>
+            
             <TabsContent value="database">
               <MongoDBConnector />
             </TabsContent>

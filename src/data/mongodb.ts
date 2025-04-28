@@ -4,6 +4,8 @@ import { productService } from "@/services/productService";
 import { userService } from "@/services/userService";
 import { contactService } from "@/services/contactService";
 import { newsletterService } from "@/services/newsletterService";
+import { promotionService } from "@/services/promotionService";
+import { developerSpecialtyService } from "@/services/developerSpecialtyService";
 import { useMongoDBConnection } from '@/hooks/useMongoDBConnection';
 import { MONGODB_CONFIG } from '@/config/mongoConfig';
 
@@ -12,7 +14,9 @@ const mongodbHelpers = {
   ...productService,
   ...userService,
   ...contactService,
-  ...newsletterService
+  ...newsletterService,
+  ...promotionService,
+  ...developerSpecialtyService
 };
 
 // Exportation des services pour utilisation dans l'application
@@ -21,6 +25,8 @@ export {
   userService,
   contactService,
   newsletterService,
+  promotionService,
+  developerSpecialtyService,
   mongodbHelpers,
   useMongoDBConnection,
   MONGODB_CONFIG

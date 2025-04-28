@@ -9,6 +9,7 @@ import { AuthProvider } from "./contexts/AuthContext";
 import { CartProvider } from "./contexts/CartContext";
 import { OrderProvider } from "./contexts/OrderContext";
 import ChatbotWidget from "./components/chatbot/ChatbotWidget";
+import { applySecurityHeaders } from "./utils/securityMiddleware";
 
 // Pages
 import HomePage from "./pages/HomePage";
@@ -25,7 +26,18 @@ import CheckoutPage from "./pages/checkout/CheckoutPage";
 import ProfilePage from "./pages/user/ProfilePage";
 import OrdersPage from "./pages/user/OrdersPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+  },
+});
+
+// Appliquer les en-têtes de sécurité au démarrage de l'application
+applySecurityHeaders();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
