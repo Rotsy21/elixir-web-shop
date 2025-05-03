@@ -1,253 +1,112 @@
+
 import { createContext, useContext, useState, ReactNode } from "react";
 import { User } from "@/models/types";
+import { authService } from "@/services/authService";
 import { toast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
-import { logSecurityEvent } from "@/utils/securityUtils";
 
-interface AuthContextType {
-  user: User | null;
-  isAdmin: boolean;
+export interface AuthContextType {
+  currentUser: User | null;
   isAuthenticated: boolean;
+  isLoading: boolean; // Ajout de la propriété isLoading manquante
   login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, username: string, password: string) => Promise<boolean>;
+  register: (username: string, email: string, password: string) => Promise<boolean>;
   logout: () => void;
-  updateProfile: (userData: Partial<User>) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const navigate = useNavigate();
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  // Simulated authentication logic
-  const login = async (email: string, password: string): Promise<boolean> => {
+  // Fonction de connexion
+  const login = async (email: string, password: string) => {
+    setIsLoading(true);
     try {
-      // Simulated API call
-      console.log("Login attempt:", { email, password: "********" });
-      
-      // Basic input validation
-      if (!email || !password) {
-        toast({
-          title: "Erreur de connexion",
-          description: "Veuillez remplir tous les champs.",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      // Simulated successful login for admin
-      if (email === "admin@example.com" && password === "admin123") {
-        const adminUser: User = {
-          id: "1",
-          username: "Admin",
-          email: "admin@example.com",
-          password: "", // Don't store passwords client-side
-          role: "admin",
-          createdAt: new Date().toISOString(),
-          specialties: ["Frontend", "UX/UI", "Data Analysis"],
-          isActive: true,
-          lastLogin: new Date().toISOString()
-        };
-        
-        setUser(adminUser);
-        
-        // Log successful admin login
-        logSecurityEvent("Admin login successful", "info", { userId: adminUser.id, email });
-        
+      const user = await authService.login(email, password);
+      if (user) {
+        setCurrentUser(user);
         toast({
           title: "Connexion réussie",
-          description: "Bienvenue, Admin!",
+          description: `Bienvenue, ${user.username}!`,
         });
-        
+        setIsLoading(false);
         return true;
       }
-      
-      // Simulated successful login for regular user
-      else if (email === "user@example.com" && password === "user123") {
-        const regularUser: User = {
-          id: "2",
-          username: "User",
-          email: "user@example.com",
-          password: "", // Don't store passwords client-side
-          role: "user",
-          createdAt: new Date().toISOString(),
-          isActive: true,
-          lastLogin: new Date().toISOString()
-        };
-        
-        setUser(regularUser);
-        
-        // Log successful user login
-        logSecurityEvent("User login successful", "info", { userId: regularUser.id, email });
-        
-        toast({
-          title: "Connexion réussie",
-          description: "Bienvenue!",
-        });
-        
-        return true;
-      }
-      
-      // Failed login
       toast({
-        title: "Erreur de connexion",
-        description: "Email ou mot de passe incorrect.",
+        title: "Échec de la connexion",
+        description: "Email ou mot de passe incorrect",
         variant: "destructive",
       });
-      
-      // Log failed login attempt
-      logSecurityEvent("Failed login attempt", "warning", { email });
-      
+      setIsLoading(false);
       return false;
     } catch (error) {
-      console.error("Login error:", error);
-      
-      // Log error
-      logSecurityEvent("Login error", "error", { email, error });
-      
+      console.error("Erreur de connexion:", error);
       toast({
-        title: "Erreur de connexion",
-        description: "Une erreur est survenue. Veuillez réessayer.",
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de la connexion",
         variant: "destructive",
       });
-      
+      setIsLoading(false);
       return false;
     }
   };
 
-  // Simulated registration logic
-  const register = async (email: string, username: string, password: string): Promise<boolean> => {
+  // Fonction d'inscription
+  const register = async (username: string, email: string, password: string) => {
+    setIsLoading(true);
     try {
-      // Basic input validation
-      if (!email || !username || !password) {
+      const user = await authService.register(username, email, password);
+      if (user) {
+        setCurrentUser(user);
         toast({
-          title: "Erreur d'inscription",
-          description: "Veuillez remplir tous les champs.",
-          variant: "destructive",
+          title: "Inscription réussie",
+          description: `Bienvenue, ${user.username}!`,
         });
-        return false;
+        setIsLoading(false);
+        return true;
       }
-
-      // Simulate checking if email already exists
-      if (email === "admin@example.com" || email === "user@example.com") {
-        toast({
-          title: "Erreur d'inscription",
-          description: "Cet email est déjà utilisé.",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      // Simulate successful registration
-      const newUser: User = {
-        id: crypto.randomUUID(),
-        username,
-        email,
-        password: "", // Don't store passwords client-side
-        role: "user",
-        createdAt: new Date().toISOString(),
-        isActive: true,
-        lastLogin: new Date().toISOString()
-      };
-      
-      setUser(newUser);
-      
-      // Log successful registration
-      logSecurityEvent("User registration successful", "info", { userId: newUser.id, email });
-      
       toast({
-        title: "Inscription réussie",
-        description: "Votre compte a été créé avec succès.",
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Registration error:", error);
-      
-      // Log error
-      logSecurityEvent("Registration error", "error", { email, error });
-      
-      toast({
-        title: "Erreur d'inscription",
-        description: "Une erreur est survenue. Veuillez réessayer.",
+        title: "Échec de l'inscription",
+        description: "Impossible de créer un compte avec ces informations",
         variant: "destructive",
       });
-      
+      setIsLoading(false);
+      return false;
+    } catch (error) {
+      console.error("Erreur d'inscription:", error);
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de l'inscription",
+        variant: "destructive",
+      });
+      setIsLoading(false);
       return false;
     }
   };
 
-  // Logout function
+  // Fonction de déconnexion
   const logout = () => {
-    if (user) {
-      // Log logout event
-      logSecurityEvent("User logout", "info", { userId: user.id, email: user.email });
-    }
-    
-    setUser(null);
-    navigate("/");
-    
+    authService.logout();
+    setCurrentUser(null);
     toast({
       title: "Déconnexion réussie",
-      description: "Vous avez été déconnecté avec succès.",
+      description: "Vous avez été déconnecté avec succès",
     });
   };
 
-  // Update profile function
-  const updateProfile = async (userData: Partial<User>): Promise<boolean> => {
-    try {
-      if (!user) {
-        toast({
-          title: "Erreur",
-          description: "Vous devez être connecté pour mettre à jour votre profil.",
-          variant: "destructive",
-        });
-        return false;
-      }
-
-      // Simulated API call to update user data
-      const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
-      
-      // Log profile update
-      logSecurityEvent("Profile updated", "info", { userId: user.id });
-      
-      toast({
-        title: "Profil mis à jour",
-        description: "Vos informations ont été mises à jour avec succès.",
-      });
-      
-      return true;
-    } catch (error) {
-      console.error("Profile update error:", error);
-      
-      // Log error
-      logSecurityEvent("Profile update error", "error", { userId: user?.id, error });
-      
-      toast({
-        title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour du profil.",
-        variant: "destructive",
-      });
-      
-      return false;
-    }
-  };
-
-  const isAdmin = user?.role === "admin";
-  const isAuthenticated = !!user;
-
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      isAdmin, 
-      isAuthenticated, 
-      login, 
-      register, 
-      logout, 
-      updateProfile 
-    }}>
+    <AuthContext.Provider
+      value={{
+        currentUser,
+        isAuthenticated: !!currentUser,
+        isLoading, // Ajout de la propriété isLoading
+        login,
+        register,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
@@ -256,7 +115,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    throw new Error("useAuth doit être utilisé à l'intérieur d'un AuthProvider");
   }
   return context;
 };

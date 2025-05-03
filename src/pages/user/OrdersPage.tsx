@@ -1,248 +1,332 @@
+
 import { useState } from "react";
-import { useOrder } from "@/contexts/OrderContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useOrder } from "@/contexts/OrderContext";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { PackageOpen, ChevronDown, ChevronUp, ShoppingBag } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { Order } from "@/models/types";
+import { Order, OrderStatus } from "@/models/types";
 
 export default function OrdersPage() {
-  const { userOrders, isLoading } = useOrder();
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const [expandedOrders, setExpandedOrders] = useState<string[]>([]);
+  const { currentUser } = useAuth();
+  const { orders, cancelOrder } = useOrder();
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  const toggleOrderDetails = (orderId: string) => {
-    setExpandedOrders(prev => 
-      prev.includes(orderId)
-        ? prev.filter(id => id !== orderId)
-        : [...prev, orderId]
-    );
-  };
-
-  const getStatusBadgeVariant = (status: Order['status']) => {
-    switch (status) {
-      case 'pending': return "secondary";
-      case 'paid': return "default";
-      case 'shipped': return "outline";
-      case 'delivered': return "outline"; // "success" n'est pas supporté, doit être 'outline'
-      case 'cancelled': return "destructive";
-      default: return "outline";
-    }
-  };
-
-  const getStatusLabel = (status: Order['status']) => {
-    switch (status) {
-      case 'pending': return "En attente";
-      case 'paid': return "Payé";
-      case 'shipped': return "Expédié";
-      case 'delivered': return "Livré";
-      case 'cancelled': return "Annulé";
-      default: return status;
-    }
-  };
-
-  if (!user) {
-    return (
-      <div className="container max-w-4xl mx-auto py-12 px-4 text-center">
-        <div className="flex flex-col items-center justify-center py-12">
-          <ShoppingBag className="h-16 w-16 mb-4 text-muted-foreground" />
-          <h1 className="text-2xl font-bold mb-2">Connectez-vous pour voir vos commandes</h1>
-          <p className="text-muted-foreground mb-6">Vous devez être connecté pour accéder à vos commandes</p>
-          <Button variant="outline" size="sm">
-            Se connecter
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="container max-w-4xl mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold mb-8 text-center md:text-left">Mes Commandes</h1>
-
-      {isLoading ? (
-        <div className="flex justify-center py-12">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      ) : userOrders.length === 0 ? (
-        <div className="text-center py-12">
-          <PackageOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-          <h2 className="text-xl font-semibold mb-2">Aucune commande</h2>
-          <p className="text-muted-foreground mb-6">Vous n'avez pas encore passé de commande</p>
-          <Button variant="outline" size="sm">
-            Découvrir nos produits
-          </Button>
-        </div>
-      ) : (
-        <Tabs defaultValue="all" className="w-full">
-          <TabsList className="grid grid-cols-4 mb-8">
-            <TabsTrigger value="all">Toutes</TabsTrigger>
-            <TabsTrigger value="pending">En cours</TabsTrigger>
-            <TabsTrigger value="completed">Livrées</TabsTrigger>
-            <TabsTrigger value="cancelled">Annulées</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="all" className="space-y-4">
-            {userOrders.map((order) => (
-              <OrderCard 
-                key={order.id} 
-                order={order} 
-                isExpanded={expandedOrders.includes(order.id)} 
-                toggleExpand={() => toggleOrderDetails(order.id)}
-                getStatusBadgeVariant={getStatusBadgeVariant}
-                getStatusLabel={getStatusLabel}
-              />
-            ))}
-          </TabsContent>
-          
-          <TabsContent value="pending" className="space-y-4">
-            {userOrders
-              .filter(order => ['pending', 'paid', 'shipped'].includes(order.status))
-              .map((order) => (
-                <OrderCard 
-                  key={order.id} 
-                  order={order} 
-                  isExpanded={expandedOrders.includes(order.id)} 
-                  toggleExpand={() => toggleOrderDetails(order.id)}
-                  getStatusBadgeVariant={getStatusBadgeVariant}
-                  getStatusLabel={getStatusLabel}
-                />
-              ))}
-          </TabsContent>
-          
-          <TabsContent value="completed" className="space-y-4">
-            {userOrders
-              .filter(order => order.status === 'delivered')
-              .map((order) => (
-                <OrderCard 
-                  key={order.id} 
-                  order={order} 
-                  isExpanded={expandedOrders.includes(order.id)} 
-                  toggleExpand={() => toggleOrderDetails(order.id)}
-                  getStatusBadgeVariant={getStatusBadgeVariant}
-                  getStatusLabel={getStatusLabel}
-                />
-              ))}
-          </TabsContent>
-          
-          <TabsContent value="cancelled" className="space-y-4">
-            {userOrders
-              .filter(order => order.status === 'cancelled')
-              .map((order) => (
-                <OrderCard 
-                  key={order.id} 
-                  order={order} 
-                  isExpanded={expandedOrders.includes(order.id)} 
-                  toggleExpand={() => toggleOrderDetails(order.id)}
-                  getStatusBadgeVariant={getStatusBadgeVariant}
-                  getStatusLabel={getStatusLabel}
-                />
-              ))}
-          </TabsContent>
-        </Tabs>
-      )}
-    </div>
+  // Filtrer les commandes pour l'utilisateur actuel
+  const userOrders = orders.filter(
+    (order) => order.userId === currentUser?.id
   );
-}
 
-interface OrderCardProps {
-  order: Order;
-  isExpanded: boolean;
-  toggleExpand: () => void;
-  getStatusBadgeVariant: (status: Order['status']) => string;
-  getStatusLabel: (status: Order['status']) => string;
-}
+  // Tri des commandes par date (la plus récente en premier)
+  const sortedOrders = [...userOrders].sort(
+    (a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
+  );
 
-function OrderCard({ 
-  order, 
-  isExpanded, 
-  toggleExpand,
-  getStatusBadgeVariant,
-  getStatusLabel
-}: OrderCardProps) {
-  const dateFormatted = format(new Date(order.createdAt), "dd MMMM yyyy", { locale: fr });
-  
+  // Grouper les commandes par statut
+  const pendingOrders = sortedOrders.filter(
+    (order) => order.status === "pending"
+  );
+  const processingOrders = sortedOrders.filter(
+    (order) => order.status === "processing"
+  );
+  const shippedOrders = sortedOrders.filter(
+    (order) => order.status === "shipped"
+  );
+  const deliveredOrders = sortedOrders.filter(
+    (order) => order.status === "delivered"
+  );
+  const cancelledOrders = sortedOrders.filter(
+    (order) => order.status === "cancelled"
+  );
+
+  // Formater une date
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat("fr-FR", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }).format(date);
+  };
+
+  // Formater un prix
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat("fr-FR", {
+      style: "currency",
+      currency: "EUR",
+    }).format(price);
+  };
+
+  // Gérer l'annulation d'une commande
+  const handleCancelOrder = (orderId: string) => {
+    if (
+      window.confirm("Êtes-vous sûr de vouloir annuler cette commande?")
+    ) {
+      cancelOrder(orderId);
+    }
+  };
+
+  // Badge de statut avec couleur appropriée
+  const StatusBadge = ({ status }: { status: OrderStatus }) => {
+    const statusMap: Record<
+      OrderStatus,
+      { label: string; variant: "default" | "destructive" | "outline" | "secondary" }
+    > = {
+      pending: {
+        label: "En attente",
+        variant: "outline",
+      },
+      processing: {
+        label: "En traitement",
+        variant: "secondary",
+      },
+      shipped: {
+        label: "Expédiée",
+        variant: "default",
+      },
+      delivered: {
+        label: "Livrée",
+        variant: "default",
+      },
+      cancelled: {
+        label: "Annulée",
+        variant: "destructive",
+      },
+    };
+
+    return (
+      <Badge variant={statusMap[status].variant}>
+        {statusMap[status].label}
+      </Badge>
+    );
+  };
+
+  // Tableau des commandes
+  const OrdersTable = ({ orders }: { orders: Order[] }) => {
+    if (orders.length === 0) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          Aucune commande dans cette catégorie.
+        </div>
+      );
+    }
+
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>N° Commande</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>Total</TableHead>
+            <TableHead>Statut</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {orders.map((order) => (
+            <TableRow key={order.id}>
+              <TableCell className="font-medium">#{order.orderNumber}</TableCell>
+              <TableCell>{formatDate(order.orderDate)}</TableCell>
+              <TableCell>{formatPrice(order.total)}</TableCell>
+              <TableCell>
+                <StatusBadge status={order.status} />
+              </TableCell>
+              <TableCell className="text-right">
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedOrder(order)}
+                    >
+                      Détails
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-3xl">
+                    <DialogHeader>
+                      <DialogTitle>
+                        Commande #{order.orderNumber}
+                      </DialogTitle>
+                      <DialogDescription>
+                        Effectuée le {formatDate(order.orderDate)}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="font-semibold">Statut</p>
+                          <StatusBadge status={order.status} />
+                        </div>
+                        <div>
+                          <p className="font-semibold">Total</p>
+                          <p>{formatPrice(order.total)}</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold mb-2">
+                          Articles commandés
+                        </h4>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Produit</TableHead>
+                              <TableHead>Prix</TableHead>
+                              <TableHead>Quantité</TableHead>
+                              <TableHead className="text-right">
+                                Sous-total
+                              </TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {order.items.map((item, index) => (
+                              <TableRow key={index}>
+                                <TableCell>{item.name}</TableCell>
+                                <TableCell>
+                                  {formatPrice(item.price)}
+                                </TableCell>
+                                <TableCell>{item.quantity}</TableCell>
+                                <TableCell className="text-right">
+                                  {formatPrice(item.price * item.quantity)}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-semibold mb-2">
+                            Adresse de livraison
+                          </h4>
+                          <p>{order.shippingAddress.street}</p>
+                          <p>
+                            {order.shippingAddress.zipCode}{" "}
+                            {order.shippingAddress.city}
+                          </p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold mb-2">
+                            Méthode de paiement
+                          </h4>
+                          <p>{order.paymentMethod}</p>
+                        </div>
+                      </div>
+
+                      {order.status === "pending" && (
+                        <div className="flex justify-end">
+                          <Button
+                            variant="destructive"
+                            onClick={() => handleCancelOrder(order.id)}
+                          >
+                            Annuler la commande
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                {order.status === "pending" && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="ml-2"
+                    onClick={() => handleCancelOrder(order.id)}
+                  >
+                    Annuler
+                  </Button>
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  };
+
+  // Page de commandes
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <div>
-          <CardTitle className="text-lg">
-            Commande #{order.id.substring(0, 8)}
-          </CardTitle>
-          <CardDescription>
-            {dateFormatted} · {order.items.reduce((total, item) => total + item.quantity, 0)} articles
-          </CardDescription>
-        </div>
-        <Badge variant={getStatusBadgeVariant(order.status)}>
-          {getStatusLabel(order.status)}
-        </Badge>
-      </CardHeader>
-      <CardContent className="pb-3">
-        <div className="flex justify-between items-center">
-          <p className="font-medium">Total: {order.totalAmount.toFixed(2)} €</p>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={toggleExpand}
-            className="flex items-center"
-          >
-            {isExpanded ? (
-              <>
-                <span className="mr-1">Masquer</span>
-                <ChevronUp className="h-4 w-4" />
-              </>
-            ) : (
-              <>
-                <span className="mr-1">Détails</span>
-                <ChevronDown className="h-4 w-4" />
-              </>
-            )}
-          </Button>
-        </div>
-        
-        {isExpanded && (
-          <div className="mt-4 border-t pt-4">
-            <h4 className="font-medium mb-2">Articles</h4>
-            <ul className="space-y-2">
-              {order.items.map((item, index) => (
-                <li key={index} className="flex justify-between">
-                  <span>
-                    {item.quantity}x {item.productName}
-                  </span>
-                  <span className="font-medium">
-                    {(item.quantity * item.unitPrice).toFixed(2)} €
-                  </span>
-                </li>
-              ))}
-            </ul>
-            
-            <h4 className="font-medium mt-4 mb-2">Adresse de livraison</h4>
-            <address className="not-italic">
-              {order.shippingAddress.fullName}<br />
-              {order.shippingAddress.addressLine1}<br />
-              {order.shippingAddress.addressLine2 && <>{order.shippingAddress.addressLine2}<br /></>}
-              {order.shippingAddress.postalCode} {order.shippingAddress.city}<br />
-              {order.shippingAddress.state}, {order.shippingAddress.country}
-            </address>
-            
-            <div className="mt-4">
-              <h4 className="font-medium mb-1">Méthode de paiement</h4>
-              <p>{order.paymentMethod}</p>
-            </div>
-          </div>
-        )}
-      </CardContent>
-      <CardFooter className="bg-muted/40 flex justify-end">
-        <Button variant="outline" size="sm">
-          Assistance
-        </Button>
-      </CardFooter>
-    </Card>
+    <div className="container mx-auto py-10">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Mes commandes</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {userOrders.length === 0 ? (
+            <Alert>
+              <AlertTitle>Aucune commande</AlertTitle>
+              <AlertDescription>
+                Vous n'avez pas encore passé de commande.
+                <div className="mt-4">
+                  <Button onClick={() => window.location.href = "/products"}>
+                    Explorer nos produits
+                  </Button>
+                </div>
+              </AlertDescription>
+            </Alert>
+          ) : (
+            <Tabs defaultValue="all">
+              <TabsList className="mb-4">
+                <TabsTrigger value="all">
+                  Toutes ({sortedOrders.length})
+                </TabsTrigger>
+                <TabsTrigger value="pending">
+                  En attente ({pendingOrders.length})
+                </TabsTrigger>
+                <TabsTrigger value="processing">
+                  En traitement ({processingOrders.length})
+                </TabsTrigger>
+                <TabsTrigger value="shipped">
+                  Expédiées ({shippedOrders.length})
+                </TabsTrigger>
+                <TabsTrigger value="delivered">
+                  Livrées ({deliveredOrders.length})
+                </TabsTrigger>
+                <TabsTrigger value="cancelled">
+                  Annulées ({cancelledOrders.length})
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="all">
+                <OrdersTable orders={sortedOrders} />
+              </TabsContent>
+              <TabsContent value="pending">
+                <OrdersTable orders={pendingOrders} />
+              </TabsContent>
+              <TabsContent value="processing">
+                <OrdersTable orders={processingOrders} />
+              </TabsContent>
+              <TabsContent value="shipped">
+                <OrdersTable orders={shippedOrders} />
+              </TabsContent>
+              <TabsContent value="delivered">
+                <OrdersTable orders={deliveredOrders} />
+              </TabsContent>
+              <TabsContent value="cancelled">
+                <OrdersTable orders={cancelledOrders} />
+              </TabsContent>
+            </Tabs>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }
