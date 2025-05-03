@@ -41,6 +41,7 @@ import { ContactsTable } from "@/components/admin/ContactsTable";
 import { NewslettersTable } from "@/components/admin/NewslettersTable";
 import { SettingsForm } from "@/components/admin/SettingsForm";
 import { MongoDBConnector } from "@/components/admin/MongoDBConnector";
+// Import PromotionsTable avec le bon chemin
 import { PromotionsTable } from "@/components/admin/PromotionsTable";
 import { SpecialtiesTable } from "@/components/admin/SpecialtiesTable";
 import { StatisticsTable } from "@/components/admin/StatisticsTable";
@@ -65,6 +66,7 @@ export default function AdminPage() {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Vérifions d'abord si l'utilisateur est admin, sinon rediriger
   if (!isAdmin) {
     return <Navigate to="/" replace />;
   }
@@ -114,6 +116,7 @@ export default function AdminPage() {
     fetchData();
   }, []);
 
+  // Filtrer les produits en fonction du terme de recherche
   const filteredProducts = searchTerm 
     ? products.filter(p => 
         p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -121,6 +124,7 @@ export default function AdminPage() {
       )
     : products;
   
+  // Filtrer les utilisateurs en fonction du terme de recherche
   const filteredUsers = searchTerm
     ? users.filter(u => 
         u.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -129,6 +133,7 @@ export default function AdminPage() {
       )
     : users;
 
+  // Filtrer les messages de contact en fonction du terme de recherche
   const filteredContacts = searchTerm
     ? contacts.filter(c => 
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -137,12 +142,14 @@ export default function AdminPage() {
       )
     : contacts;
 
+  // Filtrer les newsletters en fonction du terme de recherche
   const filteredNewsletters = searchTerm
     ? newsletters.filter(n => 
         n.email.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : newsletters;
 
+  // Filtrer les commandes en fonction du terme de recherche
   const filteredOrders = searchTerm
     ? orders.filter(order =>
         order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -151,6 +158,7 @@ export default function AdminPage() {
       )
     : orders;
 
+  // Filtrer les promotions en fonction du terme de recherche
   const filteredPromotions = searchTerm
     ? promotions.filter(p => 
         p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -159,6 +167,7 @@ export default function AdminPage() {
       )
     : promotions;
     
+  // Filtrer les spécialités en fonction du terme de recherche
   const filteredSpecialties = searchTerm
     ? specialties.filter(s => 
         s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

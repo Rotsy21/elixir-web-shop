@@ -1,332 +1,280 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrder } from "@/contexts/OrderContext";
+import { Order } from "@/models/types";
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardFooter, 
+  CardHeader, 
+  CardTitle 
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Order, OrderStatus } from "@/models/types";
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger 
+} from "@/components/ui/tabs";
+import { 
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { ArrowRight, Package, ShoppingBag, Home } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 export default function OrdersPage() {
-  const { currentUser } = useAuth();
-  const { orders, cancelOrder } = useOrder();
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const { user } = useAuth();
+  const { orders, getOrdersByUserId } = useOrder();
+  const [userOrders, setUserOrders] = useState<Order[]>([]);
+  const [activeTab, setActiveTab] = useState<string>("all");
 
-  // Filtrer les commandes pour l'utilisateur actuel
-  const userOrders = orders.filter(
-    (order) => order.userId === currentUser?.id
-  );
-
-  // Tri des commandes par date (la plus récente en premier)
-  const sortedOrders = [...userOrders].sort(
-    (a, b) => new Date(b.orderDate).getTime() - new Date(a.orderDate).getTime()
-  );
-
-  // Grouper les commandes par statut
-  const pendingOrders = sortedOrders.filter(
-    (order) => order.status === "pending"
-  );
-  const processingOrders = sortedOrders.filter(
-    (order) => order.status === "processing"
-  );
-  const shippedOrders = sortedOrders.filter(
-    (order) => order.status === "shipped"
-  );
-  const deliveredOrders = sortedOrders.filter(
-    (order) => order.status === "delivered"
-  );
-  const cancelledOrders = sortedOrders.filter(
-    (order) => order.status === "cancelled"
-  );
-
-  // Formater une date
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat("fr-FR", {
-      day: "numeric",
-      month: "long",
-      year: "numeric",
-    }).format(date);
-  };
-
-  // Formater un prix
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat("fr-FR", {
-      style: "currency",
-      currency: "EUR",
-    }).format(price);
-  };
-
-  // Gérer l'annulation d'une commande
-  const handleCancelOrder = (orderId: string) => {
-    if (
-      window.confirm("Êtes-vous sûr de vouloir annuler cette commande?")
-    ) {
-      cancelOrder(orderId);
-    }
-  };
-
-  // Badge de statut avec couleur appropriée
-  const StatusBadge = ({ status }: { status: OrderStatus }) => {
-    const statusMap: Record<
-      OrderStatus,
-      { label: string; variant: "default" | "destructive" | "outline" | "secondary" }
-    > = {
-      pending: {
-        label: "En attente",
-        variant: "outline",
-      },
-      processing: {
-        label: "En traitement",
-        variant: "secondary",
-      },
-      shipped: {
-        label: "Expédiée",
-        variant: "default",
-      },
-      delivered: {
-        label: "Livrée",
-        variant: "default",
-      },
-      cancelled: {
-        label: "Annulée",
-        variant: "destructive",
-      },
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (user) {
+        const orders = await getOrdersByUserId(user.id);
+        // Tri des commandes par date, les plus récentes en premier
+        const sortedOrders = [...orders].sort((a, b) => {
+          if (a.date && b.date) {
+            return new Date(b.date).getTime() - new Date(a.date).getTime();
+          }
+          return 0;
+        });
+        setUserOrders(sortedOrders);
+      }
     };
 
-    return (
-      <Badge variant={statusMap[status].variant}>
-        {statusMap[status].label}
-      </Badge>
-    );
-  };
+    fetchOrders();
+  }, [user, getOrdersByUserId]);
 
-  // Tableau des commandes
-  const OrdersTable = ({ orders }: { orders: Order[] }) => {
-    if (orders.length === 0) {
-      return (
-        <div className="text-center py-8 text-gray-500">
-          Aucune commande dans cette catégorie.
-        </div>
-      );
+  // Filtrer les commandes en fonction de l'onglet actif
+  const filteredOrders = userOrders.filter(order => {
+    if (activeTab === "all") return true;
+    if (activeTab === "processing") return order.status === "pending" || order.status === "processing";
+    return order.status === activeTab;
+  });
+
+  const getStatusClassName = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-yellow-100 text-yellow-800";
+      case "paid":
+        return "bg-blue-100 text-blue-800";
+      case "processing":
+        return "bg-indigo-100 text-indigo-800";
+      case "shipped":
+        return "bg-purple-100 text-purple-800";
+      case "delivered":
+        return "bg-green-100 text-green-800";
+      case "cancelled":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
-
-    return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>N° Commande</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Total</TableHead>
-            <TableHead>Statut</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {orders.map((order) => (
-            <TableRow key={order.id}>
-              <TableCell className="font-medium">#{order.orderNumber}</TableCell>
-              <TableCell>{formatDate(order.orderDate)}</TableCell>
-              <TableCell>{formatPrice(order.total)}</TableCell>
-              <TableCell>
-                <StatusBadge status={order.status} />
-              </TableCell>
-              <TableCell className="text-right">
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setSelectedOrder(order)}
-                    >
-                      Détails
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-3xl">
-                    <DialogHeader>
-                      <DialogTitle>
-                        Commande #{order.orderNumber}
-                      </DialogTitle>
-                      <DialogDescription>
-                        Effectuée le {formatDate(order.orderDate)}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="font-semibold">Statut</p>
-                          <StatusBadge status={order.status} />
-                        </div>
-                        <div>
-                          <p className="font-semibold">Total</p>
-                          <p>{formatPrice(order.total)}</p>
-                        </div>
-                      </div>
-
-                      <div>
-                        <h4 className="font-semibold mb-2">
-                          Articles commandés
-                        </h4>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              <TableHead>Produit</TableHead>
-                              <TableHead>Prix</TableHead>
-                              <TableHead>Quantité</TableHead>
-                              <TableHead className="text-right">
-                                Sous-total
-                              </TableHead>
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {order.items.map((item, index) => (
-                              <TableRow key={index}>
-                                <TableCell>{item.name}</TableCell>
-                                <TableCell>
-                                  {formatPrice(item.price)}
-                                </TableCell>
-                                <TableCell>{item.quantity}</TableCell>
-                                <TableCell className="text-right">
-                                  {formatPrice(item.price * item.quantity)}
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <h4 className="font-semibold mb-2">
-                            Adresse de livraison
-                          </h4>
-                          <p>{order.shippingAddress.street}</p>
-                          <p>
-                            {order.shippingAddress.zipCode}{" "}
-                            {order.shippingAddress.city}
-                          </p>
-                        </div>
-                        <div>
-                          <h4 className="font-semibold mb-2">
-                            Méthode de paiement
-                          </h4>
-                          <p>{order.paymentMethod}</p>
-                        </div>
-                      </div>
-
-                      {order.status === "pending" && (
-                        <div className="flex justify-end">
-                          <Button
-                            variant="destructive"
-                            onClick={() => handleCancelOrder(order.id)}
-                          >
-                            Annuler la commande
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                  </DialogContent>
-                </Dialog>
-                {order.status === "pending" && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="ml-2"
-                    onClick={() => handleCancelOrder(order.id)}
-                  >
-                    Annuler
-                  </Button>
-                )}
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    );
   };
 
-  // Page de commandes
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "En attente";
+      case "paid":
+        return "Payée";
+      case "processing":
+        return "En traitement";
+      case "shipped":
+        return "Expédiée";
+      case "delivered":
+        return "Livrée";
+      case "cancelled":
+        return "Annulée";
+      default:
+        return status;
+    }
+  };
+
+  const getFormattedDate = (dateString: string) => {
+    try {
+      return format(new Date(dateString), "dd MMMM yyyy", { locale: fr });
+    } catch (error) {
+      return "Date invalide";
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="container mx-auto py-12 px-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Vous devez être connecté</CardTitle>
+            <CardDescription>
+              Veuillez vous connecter pour voir vos commandes
+            </CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto py-10">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">Mes commandes</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {userOrders.length === 0 ? (
-            <Alert>
-              <AlertTitle>Aucune commande</AlertTitle>
-              <AlertDescription>
-                Vous n'avez pas encore passé de commande.
-                <div className="mt-4">
-                  <Button onClick={() => window.location.href = "/products"}>
-                    Explorer nos produits
+    <div className="container mx-auto py-12 px-4">
+      <h1 className="text-3xl font-bold mb-8">Mes commandes</h1>
+
+      <Tabs 
+        defaultValue="all" 
+        value={activeTab} 
+        onValueChange={setActiveTab}
+        className="mb-8"
+      >
+        <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-8">
+          <TabsTrigger value="all">Toutes</TabsTrigger>
+          <TabsTrigger value="processing">En cours</TabsTrigger>
+          <TabsTrigger value="shipped">Expédiées</TabsTrigger>
+          <TabsTrigger value="delivered">Livrées</TabsTrigger>
+          <TabsTrigger value="cancelled">Annulées</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value={activeTab}>
+          {filteredOrders.length === 0 ? (
+            <Card>
+              <CardContent className="py-10">
+                <div className="text-center">
+                  <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-gray-400" />
+                  <h3 className="text-lg font-medium mb-2">Aucune commande trouvée</h3>
+                  <p className="text-gray-500 mb-6">
+                    {activeTab === "all" 
+                      ? "Vous n'avez pas encore passé de commande." 
+                      : `Vous n'avez pas de commande avec le statut "${getStatusLabel(activeTab)}".`}
+                  </p>
+                  <Button variant="outline" onClick={() => window.location.href = "/products"}>
+                    Parcourir les produits
                   </Button>
                 </div>
-              </AlertDescription>
-            </Alert>
+              </CardContent>
+            </Card>
           ) : (
-            <Tabs defaultValue="all">
-              <TabsList className="mb-4">
-                <TabsTrigger value="all">
-                  Toutes ({sortedOrders.length})
-                </TabsTrigger>
-                <TabsTrigger value="pending">
-                  En attente ({pendingOrders.length})
-                </TabsTrigger>
-                <TabsTrigger value="processing">
-                  En traitement ({processingOrders.length})
-                </TabsTrigger>
-                <TabsTrigger value="shipped">
-                  Expédiées ({shippedOrders.length})
-                </TabsTrigger>
-                <TabsTrigger value="delivered">
-                  Livrées ({deliveredOrders.length})
-                </TabsTrigger>
-                <TabsTrigger value="cancelled">
-                  Annulées ({cancelledOrders.length})
-                </TabsTrigger>
-              </TabsList>
-              <TabsContent value="all">
-                <OrdersTable orders={sortedOrders} />
-              </TabsContent>
-              <TabsContent value="pending">
-                <OrdersTable orders={pendingOrders} />
-              </TabsContent>
-              <TabsContent value="processing">
-                <OrdersTable orders={processingOrders} />
-              </TabsContent>
-              <TabsContent value="shipped">
-                <OrdersTable orders={shippedOrders} />
-              </TabsContent>
-              <TabsContent value="delivered">
-                <OrdersTable orders={deliveredOrders} />
-              </TabsContent>
-              <TabsContent value="cancelled">
-                <OrdersTable orders={cancelledOrders} />
-              </TabsContent>
-            </Tabs>
+            <div className="space-y-8">
+              {filteredOrders.map((order) => (
+                <Card key={order.id}>
+                  <CardHeader className="border-b pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                      <div>
+                        <CardTitle className="text-lg mb-1">
+                          Commande #{order.id.slice(0, 8)}
+                        </CardTitle>
+                        <CardDescription>
+                          Passée le {order.date ? getFormattedDate(order.date) : "Date inconnue"}
+                        </CardDescription>
+                      </div>
+                      <div className="mt-2 sm:mt-0 flex items-center">
+                        <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClassName(order.status)}`}>
+                          {getStatusLabel(order.status)}
+                        </div>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-4">
+                    <Accordion type="single" collapsible className="w-full">
+                      <AccordionItem value="items">
+                        <AccordionTrigger className="py-2">
+                          <span className="flex items-center">
+                            <Package className="mr-2 h-4 w-4" /> 
+                            Articles de la commande ({order.items.length})
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <div className="space-y-4">
+                            {order.items.map((item, index) => (
+                              <div 
+                                key={index} 
+                                className="flex items-center justify-between py-2 border-b last:border-0"
+                              >
+                                <div className="flex items-center">
+                                  <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden mr-4">
+                                    {item.imageUrl ? (
+                                      <img 
+                                        src={item.imageUrl} 
+                                        alt={item.productId} 
+                                        className="w-full h-full object-cover" 
+                                      />
+                                    ) : (
+                                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                                        <ShoppingBag className="h-8 w-8 text-gray-400" />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div>
+                                    <p className="font-medium">{item.productId}</p>
+                                    <p className="text-sm text-gray-500">
+                                      Quantité: {item.quantity}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="font-medium">{item.quantity} x {(parseFloat(item.price) || 0).toFixed(2)} €</p>
+                                  <p className="text-sm font-bold">
+                                    {((parseFloat(item.price) || 0) * item.quantity).toFixed(2)} €
+                                  </p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+
+                      <AccordionItem value="shipping">
+                        <AccordionTrigger className="py-2">
+                          <span className="flex items-center">
+                            <Home className="mr-2 h-4 w-4" /> 
+                            Adresse de livraison
+                          </span>
+                        </AccordionTrigger>
+                        <AccordionContent>
+                          <p>{order.shippingAddress?.street || "Adresse non spécifiée"}</p>
+                          <p>{order.shippingAddress?.city} {order.shippingAddress?.zipCode}</p>
+                        </AccordionContent>
+                      </AccordionItem>
+                    </Accordion>
+                  </CardContent>
+                  <CardFooter className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t">
+                    <div>
+                      <p className="text-sm text-gray-500">Prix total</p>
+                      <p className="text-2xl font-bold">
+                        {order.totalPrice ? `${order.totalPrice.toFixed(2)} €` : "N/A"}
+                      </p>
+                    </div>
+                    <div className="mt-4 sm:mt-0">
+                      <Button variant="outline" className="mr-2" onClick={() => window.location.href = `/products/${order.id}`}>
+                        Détails
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                      {(order.status === "pending" || order.status === "processing") && (
+                        <Button 
+                          variant="destructive"
+                          onClick={() => {
+                            // Ici on pourrait implémenter la logique d'annulation
+                            toast({
+                              title: "Annulation de commande",
+                              description: "Fonctionnalité d'annulation à implémenter",
+                            });
+                          }}
+                        >
+                          Annuler
+                        </Button>
+                      )}
+                    </div>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
