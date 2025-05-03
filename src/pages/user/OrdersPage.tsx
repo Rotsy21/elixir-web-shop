@@ -1,73 +1,51 @@
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useOrder } from "@/contexts/OrderContext";
-import { Order } from "@/models/types";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { 
-  Tabs, 
-  TabsContent, 
-  TabsList, 
-  TabsTrigger 
-} from "@/components/ui/tabs";
-import { 
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { Order, OrderItem } from "@/models/types";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { ArrowRight, Package, ShoppingBag, Home } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Eye, Package } from "lucide-react";
 
 export default function OrdersPage() {
   const { user } = useAuth();
-  const { getOrdersByUserId } = useOrder();
-  const [userOrders, setUserOrders] = useState<Order[]>([]);
-  const [activeTab, setActiveTab] = useState<string>("all");
+  const { userOrders, isLoading } = useOrder();
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
-  useEffect(() => {
-    const fetchOrders = async () => {
-      if (user) {
-        const orders = await getOrdersByUserId(user.id);
-        // Tri des commandes par date, les plus récentes en premier
-        const sortedOrders = [...orders].sort((a, b) => {
-          if (a.createdAt && b.createdAt) {
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-          }
-          return 0;
-        });
-        setUserOrders(sortedOrders);
-      }
-    };
-
-    fetchOrders();
-  }, [user, getOrdersByUserId]);
-
-  // Filtrer les commandes en fonction de l'onglet actif
-  const filteredOrders = userOrders.filter(order => {
-    if (activeTab === "all") return true;
-    if (activeTab === "processing") return order.status === "pending" || order.status === "processing";
-    return order.status === activeTab;
-  });
-
-  const getStatusClassName = (status: string) => {
+  // Fonction pour déterminer la couleur du badge selon le statut
+  const getStatusColor = (status: string) => {
     switch (status) {
       case "pending":
         return "bg-yellow-100 text-yellow-800";
-      case "paid":
-        return "bg-blue-100 text-blue-800";
       case "processing":
-        return "bg-indigo-100 text-indigo-800";
+        return "bg-blue-100 text-blue-800";
+      case "paid":
+        return "bg-green-100 text-green-800";
       case "shipped":
         return "bg-purple-100 text-purple-800";
       case "delivered":
@@ -79,200 +57,155 @@ export default function OrdersPage() {
     }
   };
 
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case "pending":
-        return "En attente";
-      case "paid":
-        return "Payée";
-      case "processing":
-        return "En traitement";
-      case "shipped":
-        return "Expédiée";
-      case "delivered":
-        return "Livrée";
-      case "cancelled":
-        return "Annulée";
-      default:
-        return status;
-    }
+  // Fonction pour formater la date
+  const formatDate = (dateString: string | Date) => {
+    if (!dateString) return "N/A";
+    
+    const date = typeof dateString === 'string' 
+      ? new Date(dateString) 
+      : dateString;
+    
+    return format(date, "dd MMMM yyyy 'à' HH:mm", { locale: fr });
   };
 
-  const getFormattedDate = (dateString: string) => {
-    try {
-      return format(new Date(dateString), "dd MMMM yyyy", { locale: fr });
-    } catch (error) {
-      return "Date invalide";
-    }
+  // Calculer le total d'une commande
+  const calculateTotal = (items: OrderItem[]) => {
+    return items.reduce((total, item) => {
+      return total + (item.unitPrice * item.quantity);
+    }, 0).toFixed(2);
   };
-
-  if (!user) {
-    return (
-      <div className="container mx-auto py-12 px-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Vous devez être connecté</CardTitle>
-            <CardDescription>
-              Veuillez vous connecter pour voir vos commandes
-            </CardDescription>
-          </CardHeader>
-        </Card>
-      </div>
-    );
-  }
 
   return (
-    <div className="container mx-auto py-12 px-4">
-      <h1 className="text-3xl font-bold mb-8">Mes commandes</h1>
-
-      <Tabs 
-        defaultValue="all" 
-        value={activeTab} 
-        onValueChange={setActiveTab}
-        className="mb-8"
-      >
-        <TabsList className="grid grid-cols-3 md:grid-cols-6 mb-8">
-          <TabsTrigger value="all">Toutes</TabsTrigger>
-          <TabsTrigger value="processing">En cours</TabsTrigger>
-          <TabsTrigger value="shipped">Expédiées</TabsTrigger>
-          <TabsTrigger value="delivered">Livrées</TabsTrigger>
-          <TabsTrigger value="cancelled">Annulées</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value={activeTab}>
-          {filteredOrders.length === 0 ? (
-            <Card>
-              <CardContent className="py-10">
-                <div className="text-center">
-                  <ShoppingBag className="w-12 h-12 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-medium mb-2">Aucune commande trouvée</h3>
-                  <p className="text-gray-500 mb-6">
-                    {activeTab === "all" 
-                      ? "Vous n'avez pas encore passé de commande." 
-                      : `Vous n'avez pas de commande avec le statut "${getStatusLabel(activeTab)}".`}
-                  </p>
-                  <Button variant="outline" onClick={() => window.location.href = "/products"}>
-                    Parcourir les produits
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+    <div className="container mx-auto py-8">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">Mes commandes</CardTitle>
+          <CardDescription>
+            Historique de vos commandes et leur statut
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <div className="py-8 text-center">Chargement de vos commandes...</div>
+          ) : userOrders.length === 0 ? (
+            <div className="py-8 text-center">
+              <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-medium">Aucune commande</h3>
+              <p className="text-muted-foreground mt-2">
+                Vous n'avez pas encore passé de commande.
+              </p>
+            </div>
           ) : (
-            <div className="space-y-8">
-              {filteredOrders.map((order) => (
-                <Card key={order.id}>
-                  <CardHeader className="border-b pb-3">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <CardTitle className="text-lg mb-1">
-                          Commande #{order.id.slice(0, 8)}
-                        </CardTitle>
-                        <CardDescription>
-                          Passée le {order.createdAt ? getFormattedDate(order.createdAt) : "Date inconnue"}
-                        </CardDescription>
-                      </div>
-                      <div className="mt-2 sm:mt-0 flex items-center">
-                        <div className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusClassName(order.status)}`}>
-                          {getStatusLabel(order.status)}
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="pt-4">
-                    <Accordion type="single" collapsible className="w-full">
-                      <AccordionItem value="items">
-                        <AccordionTrigger className="py-2">
-                          <span className="flex items-center">
-                            <Package className="mr-2 h-4 w-4" /> 
-                            Articles de la commande ({order.items.length})
-                          </span>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <div className="space-y-4">
-                            {order.items.map((item, index) => (
-                              <div 
-                                key={index} 
-                                className="flex items-center justify-between py-2 border-b last:border-0"
-                              >
-                                <div className="flex items-center">
-                                  <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden mr-4">
-                                    {item.productId ? (
-                                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                                        <ShoppingBag className="h-8 w-8 text-gray-400" />
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>N° de commande</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Montant</TableHead>
+                    <TableHead>Statut</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {userOrders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell className="font-medium">#{order.id.substring(0, 8)}</TableCell>
+                      <TableCell>{formatDate(order.createdAt || new Date())}</TableCell>
+                      <TableCell>{order.totalAmount.toFixed(2)} €</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={getStatusColor(order.status)}>
+                          {order.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Sheet>
+                          <SheetTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setSelectedOrder(order)}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Voir
+                            </Button>
+                          </SheetTrigger>
+                          <SheetContent side="right" className="sm:max-w-md">
+                            {selectedOrder && (
+                              <>
+                                <SheetHeader>
+                                  <SheetTitle>Commande #{selectedOrder.id.substring(0, 8)}</SheetTitle>
+                                  <SheetDescription>
+                                    Détails de votre commande
+                                  </SheetDescription>
+                                </SheetHeader>
+                                <div className="space-y-6 mt-6">
+                                  <div>
+                                    <h3 className="text-sm font-medium text-gray-900">Informations</h3>
+                                    <dl className="mt-2 divide-y divide-gray-200 border-b border-gray-200">
+                                      <div className="flex justify-between py-2 text-sm">
+                                        <dt className="text-gray-500">Date</dt>
+                                        <dd className="font-medium">{formatDate(selectedOrder.createdAt || new Date())}</dd>
                                       </div>
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
-                                        <ShoppingBag className="h-8 w-8 text-gray-400" />
+                                      <div className="flex justify-between py-2 text-sm">
+                                        <dt className="text-gray-500">Statut</dt>
+                                        <dd>
+                                          <Badge variant="outline" className={getStatusColor(selectedOrder.status)}>
+                                            {selectedOrder.status}
+                                          </Badge>
+                                        </dd>
                                       </div>
-                                    )}
+                                      <div className="flex justify-between py-2 text-sm">
+                                        <dt className="text-gray-500">Mode de paiement</dt>
+                                        <dd className="font-medium">{selectedOrder.paymentMethod}</dd>
+                                      </div>
+                                    </dl>
                                   </div>
                                   <div>
-                                    <p className="font-medium">{item.productName || item.productId}</p>
-                                    <p className="text-sm text-gray-500">
-                                      Quantité: {item.quantity}
-                                    </p>
+                                    <h3 className="text-sm font-medium text-gray-900">Adresse de livraison</h3>
+                                    <address className="mt-2 not-italic text-sm text-gray-600 border-b border-gray-200 pb-4">
+                                      {selectedOrder.shippingAddress.street}<br />
+                                      {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.zipCode}<br />
+                                      {selectedOrder.shippingAddress.country}
+                                    </address>
+                                  </div>
+                                  <div>
+                                    <h3 className="text-sm font-medium text-gray-900">Produits achetés</h3>
+                                    <ul className="mt-2 divide-y divide-gray-200 border-b border-gray-200">
+                                      {selectedOrder.items.map((item) => (
+                                        <li key={item.productId} className="flex justify-between py-2">
+                                          <div className="text-sm">
+                                            <div className="font-medium">{item.productName}</div>
+                                            <div className="text-gray-500">Qté: {item.quantity}</div>
+                                          </div>
+                                          <div className="text-sm">
+                                            <div className="font-medium">{(item.unitPrice * item.quantity).toFixed(2)} €</div>
+                                            <div className="text-gray-500">{item.unitPrice.toFixed(2)} € / unité</div>
+                                          </div>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                  <div className="flex justify-between pt-2">
+                                    <div className="text-base font-medium">Total</div>
+                                    <div className="text-base font-medium">
+                                      {calculateTotal(selectedOrder.items)} €
+                                    </div>
                                   </div>
                                 </div>
-                                <div className="text-right">
-                                  <p className="font-medium">{item.quantity} x {(parseFloat(item.unitPrice) || 0).toFixed(2)} €</p>
-                                  <p className="text-sm font-bold">
-                                    {((parseFloat(item.unitPrice) || 0) * item.quantity).toFixed(2)} €
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </AccordionContent>
-                      </AccordionItem>
-
-                      <AccordionItem value="shipping">
-                        <AccordionTrigger className="py-2">
-                          <span className="flex items-center">
-                            <Home className="mr-2 h-4 w-4" /> 
-                            Adresse de livraison
-                          </span>
-                        </AccordionTrigger>
-                        <AccordionContent>
-                          <p>{order.shippingAddress?.address || "Adresse non spécifiée"}</p>
-                          <p>{order.shippingAddress?.city} {order.shippingAddress?.postalCode}</p>
-                        </AccordionContent>
-                      </AccordionItem>
-                    </Accordion>
-                  </CardContent>
-                  <CardFooter className="flex flex-col sm:flex-row items-start sm:items-center justify-between pt-4 border-t">
-                    <div>
-                      <p className="text-sm text-gray-500">Prix total</p>
-                      <p className="text-2xl font-bold">
-                        {order.totalAmount ? `${order.totalAmount.toFixed(2)} €` : "N/A"}
-                      </p>
-                    </div>
-                    <div className="mt-4 sm:mt-0">
-                      <Button variant="outline" className="mr-2" onClick={() => window.location.href = `/products/${order.id}`}>
-                        Détails
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                      {(order.status === "pending") && (
-                        <Button 
-                          variant="destructive"
-                          onClick={() => {
-                            // Ici on pourrait implémenter la logique d'annulation
-                            toast({
-                              title: "Annulation de commande",
-                              description: "Fonctionnalité d'annulation à implémenter",
-                            });
-                          }}
-                        >
-                          Annuler
-                        </Button>
-                      )}
-                    </div>
-                  </CardFooter>
-                </Card>
-              ))}
+                              </>
+                            )}
+                          </SheetContent>
+                        </Sheet>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
-        </TabsContent>
-      </Tabs>
+        </CardContent>
+      </Card>
     </div>
   );
 }
