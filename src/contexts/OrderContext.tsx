@@ -12,6 +12,7 @@ interface OrderContextType {
   isLoading: boolean;
   createOrder: (shippingAddress: ShippingAddress, paymentMethod: string) => Promise<Order | null>;
   getUserOrders: () => Promise<void>;
+  getOrdersByUserId: (userId: string) => Promise<Order[]>; // Ajout de cette fonction manquante
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -42,6 +43,21 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Erreur lors de la récupération des commandes:", error);
       toast.error("Impossible de charger vos commandes");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Implémentation de la fonction getOrdersByUserId
+  const getOrdersByUserId = async (userId: string): Promise<Order[]> => {
+    setIsLoading(true);
+    try {
+      const fetchedOrders = await orderService.getUserOrders(userId);
+      return fetchedOrders;
+    } catch (error) {
+      console.error("Erreur lors de la récupération des commandes:", error);
+      toast.error("Impossible de charger les commandes");
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -99,6 +115,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         isLoading,
         createOrder,
         getUserOrders,
+        getOrdersByUserId, // Ajout de la fonction dans le contexte
       }}
     >
       {children}

@@ -31,7 +31,7 @@ import { toast } from "@/hooks/use-toast";
 
 export default function OrdersPage() {
   const { user } = useAuth();
-  const { orders, getOrdersByUserId } = useOrder();
+  const { getOrdersByUserId } = useOrder();
   const [userOrders, setUserOrders] = useState<Order[]>([]);
   const [activeTab, setActiveTab] = useState<string>("all");
 
@@ -41,8 +41,8 @@ export default function OrdersPage() {
         const orders = await getOrdersByUserId(user.id);
         // Tri des commandes par date, les plus récentes en premier
         const sortedOrders = [...orders].sort((a, b) => {
-          if (a.date && b.date) {
-            return new Date(b.date).getTime() - new Date(a.date).getTime();
+          if (a.createdAt && b.createdAt) {
+            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
           }
           return 0;
         });
@@ -168,7 +168,7 @@ export default function OrdersPage() {
                           Commande #{order.id.slice(0, 8)}
                         </CardTitle>
                         <CardDescription>
-                          Passée le {order.date ? getFormattedDate(order.date) : "Date inconnue"}
+                          Passée le {order.createdAt ? getFormattedDate(order.createdAt) : "Date inconnue"}
                         </CardDescription>
                       </div>
                       <div className="mt-2 sm:mt-0 flex items-center">
@@ -196,12 +196,10 @@ export default function OrdersPage() {
                               >
                                 <div className="flex items-center">
                                   <div className="w-16 h-16 bg-gray-100 rounded overflow-hidden mr-4">
-                                    {item.imageUrl ? (
-                                      <img 
-                                        src={item.imageUrl} 
-                                        alt={item.productId} 
-                                        className="w-full h-full object-cover" 
-                                      />
+                                    {item.productId ? (
+                                      <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                                        <ShoppingBag className="h-8 w-8 text-gray-400" />
+                                      </div>
                                     ) : (
                                       <div className="w-full h-full flex items-center justify-center bg-gray-200">
                                         <ShoppingBag className="h-8 w-8 text-gray-400" />
@@ -209,16 +207,16 @@ export default function OrdersPage() {
                                     )}
                                   </div>
                                   <div>
-                                    <p className="font-medium">{item.productId}</p>
+                                    <p className="font-medium">{item.productName || item.productId}</p>
                                     <p className="text-sm text-gray-500">
                                       Quantité: {item.quantity}
                                     </p>
                                   </div>
                                 </div>
                                 <div className="text-right">
-                                  <p className="font-medium">{item.quantity} x {(parseFloat(item.price) || 0).toFixed(2)} €</p>
+                                  <p className="font-medium">{item.quantity} x {(parseFloat(item.unitPrice) || 0).toFixed(2)} €</p>
                                   <p className="text-sm font-bold">
-                                    {((parseFloat(item.price) || 0) * item.quantity).toFixed(2)} €
+                                    {((parseFloat(item.unitPrice) || 0) * item.quantity).toFixed(2)} €
                                   </p>
                                 </div>
                               </div>
@@ -235,8 +233,8 @@ export default function OrdersPage() {
                           </span>
                         </AccordionTrigger>
                         <AccordionContent>
-                          <p>{order.shippingAddress?.street || "Adresse non spécifiée"}</p>
-                          <p>{order.shippingAddress?.city} {order.shippingAddress?.zipCode}</p>
+                          <p>{order.shippingAddress?.address || "Adresse non spécifiée"}</p>
+                          <p>{order.shippingAddress?.city} {order.shippingAddress?.postalCode}</p>
                         </AccordionContent>
                       </AccordionItem>
                     </Accordion>
@@ -245,7 +243,7 @@ export default function OrdersPage() {
                     <div>
                       <p className="text-sm text-gray-500">Prix total</p>
                       <p className="text-2xl font-bold">
-                        {order.totalPrice ? `${order.totalPrice.toFixed(2)} €` : "N/A"}
+                        {order.totalAmount ? `${order.totalAmount.toFixed(2)} €` : "N/A"}
                       </p>
                     </div>
                     <div className="mt-4 sm:mt-0">
@@ -253,7 +251,7 @@ export default function OrdersPage() {
                         Détails
                         <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
-                      {(order.status === "pending" || order.status === "processing") && (
+                      {(order.status === "pending") && (
                         <Button 
                           variant="destructive"
                           onClick={() => {
