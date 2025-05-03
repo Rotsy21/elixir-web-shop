@@ -6,7 +6,7 @@ const Index = () => {
   const navigate = useNavigate();
   
   useEffect(() => {
-    // Rediriger vers la page d'accueil au lieu de la racine
+    // Rediriger vers la page d'accueil
     navigate('/');
   }, [navigate]);
   
