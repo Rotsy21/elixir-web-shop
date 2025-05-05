@@ -8,7 +8,6 @@ import { AdminSearch } from "./components/AdminSearch";
 import { AdminTabs } from "./components/AdminTabs";
 import { AdminTabsContent } from "./components/AdminTabsContent";
 import { useAdminData } from "./hooks/useAdminData";
-import { Tabs } from "@/components/ui/tabs";
 
 export default function AdminPage() {
   const { user, isAdmin } = useAuth();
@@ -48,29 +47,27 @@ export default function AdminPage() {
           
           <AdminSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <AdminTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-            
-            <AdminTabsContent 
-              activeTab={activeTab}
-              isLoading={isLoading}
-              products={products}
-              filteredProducts={filteredProducts}
-              users={users}
-              filteredUsers={filteredUsers}
-              contacts={contacts}
-              filteredContacts={filteredContacts}
-              newsletters={newsletters}
-              filteredNewsletters={filteredNewsletters}
-              orders={orders}
-              filteredOrders={filteredOrders}
-              promotions={promotions}
-              filteredPromotions={filteredPromotions}
-              specialties={specialties}
-              filteredSpecialties={filteredSpecialties}
-              statistics={statistics}
-            />
-          </Tabs>
+          <AdminTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+          
+          <AdminTabsContent 
+            activeTab={activeTab}
+            isLoading={isLoading}
+            products={products}
+            filteredProducts={filteredProducts}
+            users={users}
+            filteredUsers={filteredUsers}
+            contacts={contacts}
+            filteredContacts={filteredContacts}
+            newsletters={newsletters}
+            filteredNewsletters={filteredNewsletters}
+            orders={orders}
+            filteredOrders={filteredOrders}
+            promotions={promotions}
+            filteredPromotions={filteredPromotions}
+            specialties={specialties}
+            filteredSpecialties={filteredSpecialties}
+            statistics={statistics}
+          />
         </div>
       </div>
     </div>

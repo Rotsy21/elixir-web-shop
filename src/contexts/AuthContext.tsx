@@ -1,9 +1,9 @@
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { User } from "@/models/types";
 import { authService } from "@/services/authService";
 import { toast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 export interface AuthContextType {
   currentUser: User | null;
@@ -22,6 +22,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Charger l'utilisateur depuis le localStorage au démarrage
+  useEffect(() => {
+    try {
+      const savedUser = localStorage.getItem('currentUser');
+      if (savedUser) {
+        setCurrentUser(JSON.parse(savedUser));
+      }
+    } catch (error) {
+      console.error("Erreur lors du chargement de l'utilisateur:", error);
+    }
+  }, []);
 
   // Fonction de connexion
   const login = async (email: string, password: string) => {
@@ -30,15 +43,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const user = await authService.login(email, password);
       if (user) {
         // On doit convertir le résultat pour inclure un mot de passe (vide) pour satisfaire TypeScript
-        setCurrentUser({
+        const userWithEmptyPassword = {
           ...user,
           password: "" // Ajout d'un mot de passe vide pour satisfaire TypeScript
-        });
+        };
+        
+        setCurrentUser(userWithEmptyPassword);
+        
+        // Sauvegarder l'utilisateur dans le localStorage
+        localStorage.setItem('currentUser', JSON.stringify(userWithEmptyPassword));
+        
         toast({
           title: "Connexion réussie",
           description: `Bienvenue, ${user.username}!`,
         });
+        
         setIsLoading(false);
+        
+        // Rediriger vers la page précédente ou la page d'accueil
+        const from = location.state?.from?.pathname || "/";
+        navigate(from, { replace: true });
+        
         return true;
       }
       toast({
@@ -67,15 +92,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const user = await authService.register(username, email, password);
       if (user) {
         // On doit convertir le résultat pour inclure un mot de passe (vide) pour satisfaire TypeScript
-        setCurrentUser({
+        const userWithEmptyPassword = {
           ...user,
           password: "" // Ajout d'un mot de passe vide pour satisfaire TypeScript
-        });
+        };
+        
+        setCurrentUser(userWithEmptyPassword);
+        
+        // Sauvegarder l'utilisateur dans le localStorage
+        localStorage.setItem('currentUser', JSON.stringify(userWithEmptyPassword));
+        
         toast({
           title: "Inscription réussie",
           description: `Bienvenue, ${user.username}!`,
         });
+        
         setIsLoading(false);
+        navigate("/");
         return true;
       }
       toast({
@@ -104,6 +137,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } else {
       authService.logout("unknown");
     }
+    
+    // Supprimer l'utilisateur du localStorage
+    localStorage.removeItem('currentUser');
+    
     setCurrentUser(null);
     toast({
       title: "Déconnexion réussie",

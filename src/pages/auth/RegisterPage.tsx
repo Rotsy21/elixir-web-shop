@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Eye, EyeOff } from "lucide-react";
+import { toast } from "@/hooks/use-toast";
 
 // Define form schema
 const registerSchema = z.object({
@@ -51,11 +52,21 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterFormValues) => {
     setError(null);
     try {
+      console.log("Tentative d'inscription avec:", data.username, data.email);
       const success = await register(data.username, data.email, data.password);
+      console.log("Résultat de l'inscription:", success);
+      
       if (success) {
+        toast({
+          title: "Inscription réussie",
+          description: `Bienvenue, ${data.username}!`,
+        });
         navigate("/");
+      } else {
+        setError("L'inscription a échoué. Veuillez réessayer.");
       }
     } catch (error) {
+      console.error("Erreur lors de l'inscription:", error);
       setError("Une erreur s'est produite lors de l'inscription.");
     }
   };

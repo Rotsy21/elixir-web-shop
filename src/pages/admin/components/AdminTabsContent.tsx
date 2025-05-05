@@ -1,5 +1,5 @@
 
-import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { TabsContent } from "@/components/ui/tabs";
 import { Product, User, ContactMessage, Newsletter, Order, Promotion, DeveloperSpecialty, SiteStatistics } from "@/models/types";
 import { Dashboard } from "@/components/admin/Dashboard";
 import { ProductsTable } from "@/components/admin/ProductsTable";
@@ -52,56 +52,57 @@ export function AdminTabsContent({
   filteredSpecialties,
   statistics
 }: AdminTabsContentProps) {
-  return (
-    <Tabs value={activeTab} defaultValue={activeTab}>
-      <TabsContent value="dashboard">
-        <Dashboard 
-          products={products} 
-          users={users} 
-          contacts={contacts} 
-          newsletters={newsletters} 
-        />
-      </TabsContent>
-      
-      <TabsContent value="products">
-        <ProductsTable products={filteredProducts} isLoading={isLoading} />
-      </TabsContent>
-      
-      <TabsContent value="users">
-        <UsersTable users={filteredUsers} isLoading={isLoading} />
-      </TabsContent>
-      
-      <TabsContent value="contacts">
-        <ContactsTable contacts={filteredContacts} isLoading={isLoading} />
-      </TabsContent>
-      
-      <TabsContent value="newsletters">
-        <NewslettersTable newsletters={filteredNewsletters} isLoading={isLoading} />
-      </TabsContent>
-      
-      <TabsContent value="orders">
-        <OrdersTable orders={filteredOrders} isLoading={isLoading} />
-      </TabsContent>
-      
-      <TabsContent value="promotions">
-        <PromotionsTable promotions={filteredPromotions} isLoading={isLoading} />
-      </TabsContent>
-      
-      <TabsContent value="specialties">
-        <SpecialtiesTable specialties={filteredSpecialties} isLoading={isLoading} />
-      </TabsContent>
-      
-      <TabsContent value="statistics">
-        <StatisticsTable statistics={statistics} isLoading={isLoading} />
-      </TabsContent>
-      
-      <TabsContent value="settings">
-        <SettingsForm />
-      </TabsContent>
-      
-      <TabsContent value="database">
-        <MongoDBConnector />
-      </TabsContent>
-    </Tabs>
-  );
+  // On renvoie directement le contenu basé sur l'onglet actif
+  if (activeTab === "dashboard") {
+    return (
+      <Dashboard 
+        products={products} 
+        users={users} 
+        contacts={contacts} 
+        newsletters={newsletters} 
+      />
+    );
+  }
+  
+  if (activeTab === "products") {
+    return <ProductsTable products={filteredProducts} isLoading={isLoading} />;
+  }
+  
+  if (activeTab === "users") {
+    return <UsersTable users={filteredUsers} isLoading={isLoading} />;
+  }
+  
+  if (activeTab === "contacts") {
+    return <ContactsTable contacts={filteredContacts} isLoading={isLoading} />;
+  }
+  
+  if (activeTab === "newsletters") {
+    return <NewslettersTable newsletters={filteredNewsletters} isLoading={isLoading} />;
+  }
+  
+  if (activeTab === "orders") {
+    return <OrdersTable orders={filteredOrders} isLoading={isLoading} />;
+  }
+  
+  if (activeTab === "promotions") {
+    return <PromotionsTable promotions={filteredPromotions} isLoading={isLoading} />;
+  }
+  
+  if (activeTab === "specialties") {
+    return <SpecialtiesTable specialties={filteredSpecialties} isLoading={isLoading} />;
+  }
+  
+  if (activeTab === "statistics") {
+    return <StatisticsTable statistics={statistics} isLoading={isLoading} />;
+  }
+  
+  if (activeTab === "settings") {
+    return <SettingsForm />;
+  }
+  
+  if (activeTab === "database") {
+    return <MongoDBConnector />;
+  }
+  
+  return null;
 }
