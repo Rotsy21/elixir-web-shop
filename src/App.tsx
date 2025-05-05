@@ -42,12 +42,12 @@ applySecurityHeaders();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <AuthProvider>
-        <CartProvider>
-          <OrderProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
+      <BrowserRouter>
+        <AuthProvider>
+          <CartProvider>
+            <OrderProvider>
+              <Toaster />
+              <Sonner />
               <Routes>
                 <Route path="/login" element={<LoginPage />} />
                 <Route path="/register" element={<RegisterPage />} />
@@ -65,10 +65,10 @@ const App = () => (
                 <Route path="*" element={<Layout><NotFound /></Layout>} />
               </Routes>
               <ChatbotWidget />
-            </BrowserRouter>
-          </OrderProvider>
-        </CartProvider>
-      </AuthProvider>
+            </OrderProvider>
+          </CartProvider>
+        </AuthProvider>
+      </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
 );

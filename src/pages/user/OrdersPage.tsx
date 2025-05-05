@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useOrder } from "@/contexts/OrderContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Package as PackageOpen, ChevronDown, ChevronUp, ShoppingBag } from "lucide-react";
+import { Package, ChevronDown, ChevronUp, ShoppingBag } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Order } from "@/models/types";
 
@@ -73,7 +72,7 @@ export default function OrdersPage() {
         </div>
       ) : userOrders.length === 0 ? (
         <div className="text-center py-12">
-          <PackageOpen className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+          <Package className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
           <h2 className="text-xl font-semibold mb-2">Aucune commande</h2>
           <p className="text-muted-foreground mb-6">Vous n'avez pas encore passé de commande</p>
           <Button variant="outline" size="sm" onClick={() => navigate("/products")}>
