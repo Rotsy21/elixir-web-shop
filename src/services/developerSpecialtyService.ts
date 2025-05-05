@@ -4,39 +4,17 @@ import { DeveloperSpecialty } from '@/models/types';
 import { logSecurityEvent } from '@/utils/securityUtils';
 
 /**
- * Service pour gérer les spécialités du développeur dans MongoDB
+ * Service pour gérer les spécialités de développeur dans MongoDB
  */
 export const developerSpecialtyService = {
   /**
-   * Obtient toutes les spécialités
+   * Obtient toutes les spécialités de développeur
    */
   getAllSpecialties: async (): Promise<DeveloperSpecialty[]> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
         console.warn("MongoDB non connecté. Utilisation des données simulées.");
-        return [
-          {
-            id: "1",
-            name: "Développement Web Frontend",
-            description: "Expertise en HTML, CSS, JavaScript et frameworks modernes comme React",
-            icon: "code",
-            level: "expert"
-          },
-          {
-            id: "2",
-            name: "Sécurité Web",
-            description: "Protection contre les vulnérabilités et implémentation des meilleures pratiques de sécurité",
-            icon: "shield",
-            level: "expert"
-          },
-          {
-            id: "3",
-            name: "API REST",
-            description: "Conception et développement d'APIs RESTful performantes et sécurisées",
-            icon: "server",
-            level: "expert"
-          }
-        ];
+        return [];
       }
       console.log("Récupération des spécialités depuis MongoDB");
       return [];
@@ -106,6 +84,25 @@ export const developerSpecialtyService = {
     } catch (error) {
       console.error("Erreur lors de la suppression de la spécialité:", error);
       logSecurityEvent("Erreur de suppression d'une spécialité", "error", { error });
+      throw error;
+    }
+  },
+
+  /**
+   * Obtient une spécialité par son ID
+   */
+  getSpecialtyById: async (id: string): Promise<DeveloperSpecialty | null> => {
+    try {
+      if (!MONGODB_CONFIG.isConnected) {
+        console.warn("MongoDB non connecté. Impossible de récupérer la spécialité.");
+        throw new Error("MongoDB non connecté");
+      }
+      
+      console.log(`Récupération de la spécialité ${id} depuis MongoDB`);
+      return null;
+    } catch (error) {
+      console.error("Erreur lors de la récupération de la spécialité:", error);
+      logSecurityEvent("Erreur de récupération d'une spécialité", "error", { error });
       throw error;
     }
   }

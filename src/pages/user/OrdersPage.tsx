@@ -1,17 +1,7 @@
 
-import { useEffect, useState } from "react";
-import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
 import { useOrder } from "@/contexts/OrderContext";
-import { Order, OrderItem } from "@/models/types";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Table,
   TableBody,
@@ -21,31 +11,106 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
-import { Badge } from "@/components/ui/badge";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Eye, Package } from "lucide-react";
+import {
+  Package,
+  ChevronDown,
+  ChevronUp,
+  Truck,
+  ShoppingBag,
+  Clock,
+  Calendar,
+} from "lucide-react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { Order } from "@/models/types";
 
 export default function OrdersPage() {
-  const { user } = useAuth();
   const { userOrders, isLoading } = useOrder();
+  const { user } = useAuth();
+  const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
 
-  // Fonction pour déterminer la couleur du badge selon le statut
-  const getStatusColor = (status: string) => {
+  if (isLoading) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Mes commandes</CardTitle>
+            <CardDescription>Chargement de vos commandes en cours...</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Mes commandes</CardTitle>
+            <CardDescription>Veuillez vous connecter pour voir vos commandes.</CardDescription>
+          </CardHeader>
+        </Card>
+      </div>
+    );
+  }
+
+  if (userOrders.length === 0) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Mes commandes</CardTitle>
+            <CardDescription>Vous n'avez pas encore passé de commande.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground" />
+              <h3 className="mt-4 text-lg font-semibold">Pas de commande</h3>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Vous n'avez pas encore passé de commande. Parcourez notre catalogue de produits pour trouver des articles qui vous plaisent.
+              </p>
+              <Button className="mt-4" asChild>
+                <a href="/products">Voir les produits</a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  const toggleOrderExpand = (orderId: string) => {
+    setExpandedOrder(expandedOrder === orderId ? null : orderId);
+  };
+
+  const showOrderDetails = (order: Order) => {
+    setSelectedOrder(order);
+    setIsDetailsOpen(true);
+  };
+
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case "pending":
         return "bg-yellow-100 text-yellow-800";
-      case "processing":
-        return "bg-blue-100 text-blue-800";
       case "paid":
-        return "bg-green-100 text-green-800";
+        return "bg-blue-100 text-blue-800";
       case "shipped":
         return "bg-purple-100 text-purple-800";
       case "delivered":
@@ -57,155 +122,260 @@ export default function OrdersPage() {
     }
   };
 
-  // Fonction pour formater la date
-  const formatDate = (dateString: string | Date) => {
-    if (!dateString) return "N/A";
-    
-    const date = typeof dateString === 'string' 
-      ? new Date(dateString) 
-      : dateString;
-    
-    return format(date, "dd MMMM yyyy 'à' HH:mm", { locale: fr });
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "En attente";
+      case "paid":
+        return "Payée";
+      case "shipped":
+        return "Expédiée";
+      case "delivered":
+        return "Livrée";
+      case "cancelled":
+        return "Annulée";
+      default:
+        return status;
+    }
   };
 
-  // Calculer le total d'une commande
-  const calculateTotal = (items: OrderItem[]) => {
-    return items.reduce((total, item) => {
-      return total + (item.unitPrice * item.quantity);
-    }, 0).toFixed(2);
+  const formatDate = (date: string | Date) => {
+    try {
+      return format(new Date(date), "PPP", { locale: fr });
+    } catch {
+      return "Date invalide";
+    }
   };
 
   return (
-    <div className="container mx-auto py-8">
+    <div className="max-w-4xl mx-auto p-6">
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Mes commandes</CardTitle>
+          <CardTitle className="flex items-center">
+            <Package className="mr-2 h-6 w-6" />
+            Mes commandes
+          </CardTitle>
           <CardDescription>
-            Historique de vos commandes et leur statut
+            Historique de toutes vos commandes
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="py-8 text-center">Chargement de vos commandes...</div>
-          ) : userOrders.length === 0 ? (
-            <div className="py-8 text-center">
-              <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-medium">Aucune commande</h3>
-              <p className="text-muted-foreground mt-2">
-                Vous n'avez pas encore passé de commande.
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-md border">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>N° de commande</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Montant</TableHead>
-                    <TableHead>Statut</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {userOrders.map((order) => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">#{order.id.substring(0, 8)}</TableCell>
-                      <TableCell>{formatDate(order.createdAt || new Date())}</TableCell>
-                      <TableCell>{order.totalAmount.toFixed(2)} €</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={getStatusColor(order.status)}>
-                          {order.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Sheet>
-                          <SheetTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setSelectedOrder(order)}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Voir
-                            </Button>
-                          </SheetTrigger>
-                          <SheetContent side="right" className="sm:max-w-md">
-                            {selectedOrder && (
-                              <>
-                                <SheetHeader>
-                                  <SheetTitle>Commande #{selectedOrder.id.substring(0, 8)}</SheetTitle>
-                                  <SheetDescription>
-                                    Détails de votre commande
-                                  </SheetDescription>
-                                </SheetHeader>
-                                <div className="space-y-6 mt-6">
-                                  <div>
-                                    <h3 className="text-sm font-medium text-gray-900">Informations</h3>
-                                    <dl className="mt-2 divide-y divide-gray-200 border-b border-gray-200">
-                                      <div className="flex justify-between py-2 text-sm">
-                                        <dt className="text-gray-500">Date</dt>
-                                        <dd className="font-medium">{formatDate(selectedOrder.createdAt || new Date())}</dd>
-                                      </div>
-                                      <div className="flex justify-between py-2 text-sm">
-                                        <dt className="text-gray-500">Statut</dt>
-                                        <dd>
-                                          <Badge variant="outline" className={getStatusColor(selectedOrder.status)}>
-                                            {selectedOrder.status}
-                                          </Badge>
-                                        </dd>
-                                      </div>
-                                      <div className="flex justify-between py-2 text-sm">
-                                        <dt className="text-gray-500">Mode de paiement</dt>
-                                        <dd className="font-medium">{selectedOrder.paymentMethod}</dd>
-                                      </div>
-                                    </dl>
-                                  </div>
-                                  <div>
-                                    <h3 className="text-sm font-medium text-gray-900">Adresse de livraison</h3>
-                                    <address className="mt-2 not-italic text-sm text-gray-600 border-b border-gray-200 pb-4">
-                                      {selectedOrder.shippingAddress.street}<br />
-                                      {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.zipCode}<br />
-                                      {selectedOrder.shippingAddress.country}
-                                    </address>
-                                  </div>
-                                  <div>
-                                    <h3 className="text-sm font-medium text-gray-900">Produits achetés</h3>
-                                    <ul className="mt-2 divide-y divide-gray-200 border-b border-gray-200">
-                                      {selectedOrder.items.map((item) => (
-                                        <li key={item.productId} className="flex justify-between py-2">
-                                          <div className="text-sm">
-                                            <div className="font-medium">{item.productName}</div>
-                                            <div className="text-gray-500">Qté: {item.quantity}</div>
-                                          </div>
-                                          <div className="text-sm">
-                                            <div className="font-medium">{(item.unitPrice * item.quantity).toFixed(2)} €</div>
-                                            <div className="text-gray-500">{item.unitPrice.toFixed(2)} € / unité</div>
-                                          </div>
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  </div>
-                                  <div className="flex justify-between pt-2">
-                                    <div className="text-base font-medium">Total</div>
-                                    <div className="text-base font-medium">
-                                      {calculateTotal(selectedOrder.items)} €
-                                    </div>
-                                  </div>
-                                </div>
-                              </>
-                            )}
-                          </SheetContent>
-                        </Sheet>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+          <div className="space-y-6">
+            {userOrders.map((order) => (
+              <Card key={order.id} className="overflow-hidden">
+                <div
+                  className="p-4 cursor-pointer hover:bg-gray-50"
+                  onClick={() => toggleOrderExpand(order.id)}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="flex-shrink-0">
+                        {order.status === "shipped" ? (
+                          <Truck className="h-5 w-5 text-purple-500" />
+                        ) : order.status === "delivered" ? (
+                          <Package className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <Clock className="h-5 w-5 text-blue-500" />
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="font-medium">
+                          Commande #{order.id.substring(0, 8)}
+                        </h3>
+                        <div className="flex items-center text-sm text-gray-500">
+                          <Calendar className="mr-1 h-3.5 w-3.5" />
+                          {formatDate(order.createdAt)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <span
+                        className={`px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeClass(
+                          order.status
+                        )}`}
+                      >
+                        {getStatusLabel(order.status)}
+                      </span>
+                      <div className="text-right">
+                        <div className="font-medium">
+                          {order.totalAmount.toFixed(2)} €
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {order.items.length} article
+                          {order.items.length > 1 ? "s" : ""}
+                        </div>
+                      </div>
+                      {expandedOrder === order.id ? (
+                        <ChevronUp className="h-5 w-5 text-gray-400" />
+                      ) : (
+                        <ChevronDown className="h-5 w-5 text-gray-400" />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {expandedOrder === order.id && (
+                  <div className="px-4 pb-4">
+                    <div className="pt-2 pb-4">
+                      <h4 className="text-sm font-medium mb-2">
+                        Détails de la commande
+                      </h4>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Produit</TableHead>
+                            <TableHead className="text-right">Prix unitaire</TableHead>
+                            <TableHead className="text-right">Quantité</TableHead>
+                            <TableHead className="text-right">Total</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {order.items.map((item, index) => (
+                            <TableRow key={index}>
+                              <TableCell>{item.productName}</TableCell>
+                              <TableCell className="text-right">
+                                {item.unitPrice.toFixed(2)} €
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {item.quantity}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {(item.unitPrice * item.quantity).toFixed(2)} €
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    <div className="flex justify-between pt-4 border-t">
+                      <div>
+                        <h4 className="text-sm font-medium mb-1">
+                          Adresse de livraison:
+                        </h4>
+                        <p className="text-sm text-gray-600">
+                          {order.shippingAddress.fullName}<br />
+                          {order.shippingAddress.addressLine1}<br />
+                          {order.shippingAddress.addressLine2 && <>{order.shippingAddress.addressLine2}<br /></>}
+                          {order.shippingAddress.postalCode} {order.shippingAddress.city}<br />
+                          {order.shippingAddress.state}, {order.shippingAddress.country}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        onClick={() => showOrderDetails(order)}
+                      >
+                        Voir les détails complets
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
         </CardContent>
       </Card>
+
+      {selectedOrder && (
+        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>
+                Détails de la commande #{selectedOrder.id.substring(0, 8)}
+              </DialogTitle>
+              <DialogDescription>
+                Commande passée le {formatDate(selectedOrder.createdAt)}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-6">
+              <div>
+                <h3 className="font-medium mb-2">Statut actuel:</h3>
+                <span
+                  className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusBadgeClass(
+                    selectedOrder.status
+                  )}`}
+                >
+                  {getStatusLabel(selectedOrder.status)}
+                </span>
+              </div>
+
+              <div>
+                <h3 className="font-medium mb-2">Articles commandés:</h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Produit</TableHead>
+                      <TableHead className="text-right">Prix unitaire</TableHead>
+                      <TableHead className="text-right">Quantité</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selectedOrder.items.map((item, index) => (
+                      <TableRow key={index}>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell className="text-right">
+                          {item.unitPrice.toFixed(2)} €
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {item.quantity}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {(item.unitPrice * item.quantity).toFixed(2)} €
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                    <TableRow>
+                      <TableCell colSpan={3} className="text-right font-medium">
+                        Total de la commande:
+                      </TableCell>
+                      <TableCell className="text-right font-bold">
+                        {selectedOrder.totalAmount.toFixed(2)} €
+                      </TableCell>
+                    </TableRow>
+                  </TableBody>
+                </Table>
+              </div>
+
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-medium mb-2">Informations de livraison:</h3>
+                  <div className="text-sm space-y-1">
+                    <p className="font-medium">{selectedOrder.shippingAddress.fullName}</p>
+                    <p>{selectedOrder.shippingAddress.addressLine1}</p>
+                    {selectedOrder.shippingAddress.addressLine2 && <p>{selectedOrder.shippingAddress.addressLine2}</p>}
+                    <p>
+                      {selectedOrder.shippingAddress.postalCode} {selectedOrder.shippingAddress.city}
+                    </p>
+                    <p>
+                      {selectedOrder.shippingAddress.state}, {selectedOrder.shippingAddress.country}
+                    </p>
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-medium mb-2">Méthode de paiement:</h3>
+                  <p className="text-sm">{selectedOrder.paymentMethod}</p>
+                  {selectedOrder.trackingNumber && (
+                    <>
+                      <h3 className="font-medium mb-2 mt-4">Numéro de suivi:</h3>
+                      <p className="text-sm font-mono bg-gray-50 p-2 rounded">
+                        {selectedOrder.trackingNumber}
+                      </p>
+                    </>
+                  )}
+                </div>
+              </div>
+
+              {selectedOrder.notes && (
+                <div>
+                  <h3 className="font-medium mb-2">Notes:</h3>
+                  <p className="text-sm bg-gray-50 p-3 rounded">{selectedOrder.notes}</p>
+                </div>
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
