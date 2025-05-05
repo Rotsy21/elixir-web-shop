@@ -8,6 +8,7 @@ import { AdminSearch } from "./components/AdminSearch";
 import { AdminTabs } from "./components/AdminTabs";
 import { AdminTabsContent } from "./components/AdminTabsContent";
 import { useAdminData } from "./hooks/useAdminData";
+import { Tabs } from "@/components/ui/tabs";
 
 export default function AdminPage() {
   const { user, isAdmin } = useAuth();
@@ -44,31 +45,32 @@ export default function AdminPage() {
       <div className="py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <AdminHeader />
-          <MongoDBConnector />
           
           <AdminSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           
-          <AdminTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-          
-          <AdminTabsContent 
-            activeTab={activeTab}
-            isLoading={isLoading}
-            products={products}
-            filteredProducts={filteredProducts}
-            users={users}
-            filteredUsers={filteredUsers}
-            contacts={contacts}
-            filteredContacts={filteredContacts}
-            newsletters={newsletters}
-            filteredNewsletters={filteredNewsletters}
-            orders={orders}
-            filteredOrders={filteredOrders}
-            promotions={promotions}
-            filteredPromotions={filteredPromotions}
-            specialties={specialties}
-            filteredSpecialties={filteredSpecialties}
-            statistics={statistics}
-          />
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <AdminTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+            
+            <AdminTabsContent 
+              activeTab={activeTab}
+              isLoading={isLoading}
+              products={products}
+              filteredProducts={filteredProducts}
+              users={users}
+              filteredUsers={filteredUsers}
+              contacts={contacts}
+              filteredContacts={filteredContacts}
+              newsletters={newsletters}
+              filteredNewsletters={filteredNewsletters}
+              orders={orders}
+              filteredOrders={filteredOrders}
+              promotions={promotions}
+              filteredPromotions={filteredPromotions}
+              specialties={specialties}
+              filteredSpecialties={filteredSpecialties}
+              statistics={statistics}
+            />
+          </Tabs>
         </div>
       </div>
     </div>

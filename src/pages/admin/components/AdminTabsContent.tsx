@@ -1,5 +1,5 @@
 
-import { TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Product, User, ContactMessage, Newsletter, Order, Promotion, DeveloperSpecialty, SiteStatistics } from "@/models/types";
 import { Dashboard } from "@/components/admin/Dashboard";
 import { ProductsTable } from "@/components/admin/ProductsTable";
@@ -53,7 +53,7 @@ export function AdminTabsContent({
   statistics
 }: AdminTabsContentProps) {
   return (
-    <>
+    <Tabs value={activeTab} defaultValue={activeTab}>
       <TabsContent value="dashboard">
         <Dashboard 
           products={products} 
@@ -102,6 +102,6 @@ export function AdminTabsContent({
       <TabsContent value="database">
         <MongoDBConnector />
       </TabsContent>
-    </>
+    </Tabs>
   );
 }
