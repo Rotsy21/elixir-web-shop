@@ -1,6 +1,7 @@
 
 import { MONGODB_CONFIG } from '@/config/mongoConfig';
 import { Product } from '@/models/types';
+import { toast } from "@/hooks/use-toast";
 
 /**
  * Service pour gérer les produits dans MongoDB
@@ -13,7 +14,9 @@ export const productService = {
     try {
       if (!MONGODB_CONFIG.isConnected) {
         console.warn("MongoDB non connecté. Utilisation des données simulées.");
-        return [];
+        // Récupérer depuis localStorage pour démo
+        const savedProducts = localStorage.getItem('products');
+        return savedProducts ? JSON.parse(savedProducts) : [];
       }
       console.log("Récupération des produits depuis MongoDB");
       return [];
@@ -29,8 +32,26 @@ export const productService = {
   addProduct: async (product: Omit<Product, 'id' | 'createdAt'>): Promise<Product> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. Le produit n'a pas été ajouté.");
-        throw new Error("MongoDB non connecté");
+        console.warn("MongoDB non connecté. Le produit sera stocké localement.");
+        
+        const newProduct: Product = {
+          ...product,
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString()
+        };
+        
+        // Sauvegarde locale pour démonstration
+        const savedProducts = localStorage.getItem('products');
+        const products = savedProducts ? JSON.parse(savedProducts) : [];
+        products.push(newProduct);
+        localStorage.setItem('products', JSON.stringify(products));
+        
+        toast({
+          title: "Produit ajouté",
+          description: "Le produit a été ajouté avec succès.",
+        });
+        
+        return newProduct;
       }
       
       console.log("Ajout d'un produit dans MongoDB:", product);

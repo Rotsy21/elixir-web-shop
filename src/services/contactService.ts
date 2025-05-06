@@ -14,7 +14,9 @@ export const contactService = {
     try {
       if (!MONGODB_CONFIG.isConnected) {
         console.warn("MongoDB non connecté. Utilisation des données simulées.");
-        return [];
+        // Récupérer depuis localStorage pour démo
+        const savedContacts = localStorage.getItem('contacts');
+        return savedContacts ? JSON.parse(savedContacts) : [];
       }
       console.log("Récupération des contacts depuis MongoDB");
       return [];
@@ -30,13 +32,27 @@ export const contactService = {
   addContact: async (contact: Omit<ContactMessage, 'id' | 'createdAt' | 'read'>): Promise<ContactMessage> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. Le message n'a pas été ajouté.");
+        console.warn("MongoDB non connecté. Le message sera stocké localement.");
+        
+        const newContact: ContactMessage = {
+          ...contact,
+          id: crypto.randomUUID(),
+          read: false,
+          createdAt: new Date().toISOString()
+        };
+        
+        // Sauvegarde locale pour démonstration
+        const savedContacts = localStorage.getItem('contacts');
+        const contacts = savedContacts ? JSON.parse(savedContacts) : [];
+        contacts.push(newContact);
+        localStorage.setItem('contacts', JSON.stringify(contacts));
+        
         toast({
-          title: "Erreur de connexion",
-          description: "Impossible de stocker le message. La base de données n'est pas connectée.",
-          variant: "destructive",
+          title: "Message envoyé",
+          description: "Votre message a été stocké avec succès.",
         });
-        throw new Error("MongoDB non connecté");
+        
+        return newContact;
       }
       
       console.log("Ajout d'un message de contact dans MongoDB:", contact);

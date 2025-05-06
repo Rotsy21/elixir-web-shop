@@ -14,7 +14,9 @@ export const newsletterService = {
     try {
       if (!MONGODB_CONFIG.isConnected) {
         console.warn("MongoDB non connecté. Utilisation des données simulées.");
-        return [];
+        // Récupérer depuis localStorage pour démo
+        const savedNewsletters = localStorage.getItem('newsletters');
+        return savedNewsletters ? JSON.parse(savedNewsletters) : [];
       }
       console.log("Récupération des inscriptions newsletter depuis MongoDB");
       return [];
@@ -30,13 +32,26 @@ export const newsletterService = {
   addNewsletter: async (email: string): Promise<Newsletter> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. L'inscription n'a pas été ajoutée.");
+        console.warn("MongoDB non connecté. L'inscription sera stockée localement.");
+        
+        const newNewsletter: Newsletter = {
+          id: crypto.randomUUID(),
+          email,
+          createdAt: new Date().toISOString()
+        };
+        
+        // Sauvegarde locale pour démonstration
+        const savedNewsletters = localStorage.getItem('newsletters');
+        const newsletters = savedNewsletters ? JSON.parse(savedNewsletters) : [];
+        newsletters.push(newNewsletter);
+        localStorage.setItem('newsletters', JSON.stringify(newsletters));
+        
         toast({
-          title: "Erreur de connexion",
-          description: "Impossible de stocker l'inscription. La base de données n'est pas connectée.",
-          variant: "destructive",
+          title: "Inscription réussie",
+          description: "Votre inscription à la newsletter a été enregistrée.",
         });
-        throw new Error("MongoDB non connecté");
+        
+        return newNewsletter;
       }
       
       console.log("Ajout d'une inscription newsletter dans MongoDB:", email);

@@ -1,6 +1,6 @@
 
 import { MONGODB_CONFIG } from '@/config/mongoConfig';
-import { Order, OrderItem } from '@/models/types';
+import { Order } from '@/models/types';
 import { toast } from "sonner";
 
 /**

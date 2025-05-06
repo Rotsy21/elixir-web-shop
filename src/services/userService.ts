@@ -1,6 +1,7 @@
 
 import { MONGODB_CONFIG } from '@/config/mongoConfig';
 import { User } from '@/models/types';
+import { toast } from "@/hooks/use-toast";
 
 /**
  * Service pour gérer les utilisateurs dans MongoDB
@@ -13,7 +14,9 @@ export const userService = {
     try {
       if (!MONGODB_CONFIG.isConnected) {
         console.warn("MongoDB non connecté. Utilisation des données simulées.");
-        return [];
+        // Récupérer depuis localStorage pour démo
+        const savedUsers = localStorage.getItem('users');
+        return savedUsers ? JSON.parse(savedUsers) : [];
       }
       console.log("Récupération des utilisateurs depuis MongoDB");
       return [];
@@ -29,8 +32,34 @@ export const userService = {
   addUser: async (user: Omit<User, 'id' | 'createdAt'>): Promise<User> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. L'utilisateur n'a pas été ajouté.");
-        throw new Error("MongoDB non connecté");
+        console.warn("MongoDB non connecté. L'utilisateur sera stocké localement.");
+        
+        const newUser: User = {
+          ...user,
+          id: crypto.randomUUID(),
+          createdAt: new Date().toISOString()
+        };
+        
+        // Sauvegarde locale pour démonstration
+        const savedUsers = localStorage.getItem('users');
+        const users = savedUsers ? JSON.parse(savedUsers) : [];
+        users.push(newUser);
+        localStorage.setItem('users', JSON.stringify(users));
+        
+        // Également enregistrer dans localStorage pour l'authentification
+        if (!localStorage.getItem('currentUser')) {
+          localStorage.setItem('currentUser', JSON.stringify({
+            ...newUser,
+            isAuthenticated: true
+          }));
+        }
+        
+        toast({
+          title: "Compte créé",
+          description: "Votre compte a été créé avec succès.",
+        });
+        
+        return newUser;
       }
       
       console.log("Ajout d'un utilisateur dans MongoDB:", user);
