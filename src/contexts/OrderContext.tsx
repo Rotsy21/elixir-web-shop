@@ -12,7 +12,7 @@ interface OrderContextType {
   isLoading: boolean;
   createOrder: (shippingAddress: ShippingAddress, paymentMethod: string) => Promise<Order | null>;
   getUserOrders: () => Promise<void>;
-  getOrdersByUserId: (userId: string) => Promise<Order[]>; // Ajout de cette fonction manquante
+  getOrdersByUserId: (userId: string) => Promise<Order[]>;
 }
 
 const OrderContext = createContext<OrderContextType | undefined>(undefined);
@@ -115,7 +115,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         isLoading,
         createOrder,
         getUserOrders,
-        getOrdersByUserId, // Ajout de la fonction dans le contexte
+        getOrdersByUserId,
       }}
     >
       {children}

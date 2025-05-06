@@ -4,6 +4,7 @@ import { productService } from "@/services/productService";
 import { userService } from "@/services/userService";
 import { contactService } from "@/services/contactService";
 import { newsletterService } from "@/services/newsletterService";
+import { orderService } from "@/services/orderService";
 import { promotionService } from "@/services/promotionService";
 import { developerSpecialtyService } from "@/services/developerSpecialtyService";
 import { statisticsService } from "@/services/statisticsService";
@@ -27,6 +28,7 @@ export {
   userService,
   contactService,
   newsletterService,
+  orderService,
   promotionService,
   developerSpecialtyService,
   statisticsService,

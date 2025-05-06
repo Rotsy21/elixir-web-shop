@@ -1,7 +1,10 @@
 
 import { useState, useEffect } from "react";
 import { Product, User, ContactMessage, Newsletter, Order, Promotion, DeveloperSpecialty, SiteStatistics } from "@/models/types";
-import { getProducts, getUsers, getContacts, getNewsletters } from "@/data/mockData";
+import { productService } from "@/services/productService";
+import { userService } from "@/services/userService";
+import { contactService } from "@/services/contactService";
+import { newsletterService } from "@/services/newsletterService";
 import { orderService } from "@/services/orderService";
 import { promotionService } from "@/services/promotionService";
 import { developerSpecialtyService } from "@/services/developerSpecialtyService";
@@ -36,14 +39,14 @@ export function useAdminData(searchTerm: string) {
           specialtiesData,
           statisticsData
         ] = await Promise.all([
-          getProducts(),
-          getUsers(),
-          getContacts(),
-          getNewsletters(),
+          productService.getAllProducts(),
+          userService.getAllUsers(),
+          contactService.getAllContacts ? contactService.getAllContacts() : [],
+          newsletterService.getAllNewsletters(),
           orderService.getAllOrders(),
-          promotionService.getAllPromotions(),
-          developerSpecialtyService.getAllSpecialties(),
-          statisticsService.getAllStatistics(),
+          promotionService.getAllPromotions ? promotionService.getAllPromotions() : [],
+          developerSpecialtyService.getAllSpecialties ? developerSpecialtyService.getAllSpecialties() : [],
+          statisticsService.getAllStatistics ? statisticsService.getAllStatistics() : [],
         ]);
         
         setProducts(productsData);

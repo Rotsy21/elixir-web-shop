@@ -29,7 +29,7 @@ export const userService = {
   /**
    * Ajoute un nouvel utilisateur
    */
-  addUser: async (user: Omit<User, 'id' | 'createdAt'>): Promise<User> => {
+  addUser: async (user: Omit<User, 'id' | 'createdAt'>): Promise<{ success: boolean; id: string }> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
         console.warn("MongoDB non connecté. L'utilisateur sera stocké localement.");
@@ -46,20 +46,12 @@ export const userService = {
         users.push(newUser);
         localStorage.setItem('users', JSON.stringify(users));
         
-        // Également enregistrer dans localStorage pour l'authentification
-        if (!localStorage.getItem('currentUser')) {
-          localStorage.setItem('currentUser', JSON.stringify({
-            ...newUser,
-            isAuthenticated: true
-          }));
-        }
-        
         toast({
           title: "Compte créé",
-          description: "Votre compte a été créé avec succès.",
+          description: "Le compte a été créé avec succès.",
         });
         
-        return newUser;
+        return { success: true, id: newUser.id };
       }
       
       console.log("Ajout d'un utilisateur dans MongoDB:", user);
@@ -70,10 +62,10 @@ export const userService = {
         createdAt: new Date().toISOString()
       };
       
-      return newUser;
+      return { success: true, id: newUser.id };
     } catch (error) {
       console.error("Erreur lors de l'ajout de l'utilisateur:", error);
-      throw error;
+      return { success: false, id: "" };
     }
   },
 
@@ -83,8 +75,25 @@ export const userService = {
   updateUser: async (id: string, user: Partial<User>): Promise<User> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. L'utilisateur n'a pas été mis à jour.");
-        throw new Error("MongoDB non connecté");
+        console.warn("MongoDB non connecté. Mise à jour locale.");
+        
+        const savedUsers = localStorage.getItem('users');
+        const users = savedUsers ? JSON.parse(savedUsers) : [];
+        const userIndex = users.findIndex((u: User) => u.id === id);
+        
+        if (userIndex === -1) {
+          throw new Error("Utilisateur non trouvé");
+        }
+        
+        users[userIndex] = { ...users[userIndex], ...user };
+        localStorage.setItem('users', JSON.stringify(users));
+        
+        toast({
+          title: "Utilisateur mis à jour",
+          description: "L'utilisateur a été mis à jour avec succès.",
+        });
+        
+        return users[userIndex];
       }
       
       console.log(`Mise à jour de l'utilisateur ${id} dans MongoDB:`, user);
@@ -101,8 +110,24 @@ export const userService = {
   deleteUser: async (id: string): Promise<boolean> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. L'utilisateur n'a pas été supprimé.");
-        throw new Error("MongoDB non connecté");
+        console.warn("MongoDB non connecté. Suppression locale.");
+        
+        const savedUsers = localStorage.getItem('users');
+        const users = savedUsers ? JSON.parse(savedUsers) : [];
+        const filteredUsers = users.filter((u: User) => u.id !== id);
+        
+        if (filteredUsers.length === users.length) {
+          throw new Error("Utilisateur non trouvé");
+        }
+        
+        localStorage.setItem('users', JSON.stringify(filteredUsers));
+        
+        toast({
+          title: "Utilisateur supprimé",
+          description: "L'utilisateur a été supprimé avec succès.",
+        });
+        
+        return true;
       }
       
       console.log(`Suppression de l'utilisateur ${id} dans MongoDB`);

@@ -9,7 +9,7 @@ export interface AuthContextType {
   currentUser: User | null;
   user: User | null; // Ajout de l'alias user pour compatibilité
   isAuthenticated: boolean;
-  isAdmin: boolean; // Ajout de la propriété isAdmin
+  isAdmin: boolean;
   isLoading: boolean;
   login: (email: string, password: string) => Promise<boolean>;
   register: (username: string, email: string, password: string) => Promise<boolean>;
@@ -101,6 +101,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         // Sauvegarder l'utilisateur dans le localStorage
         localStorage.setItem('currentUser', JSON.stringify(userWithEmptyPassword));
+
+        // Ajouter également à la liste des utilisateurs
+        const savedUsers = localStorage.getItem('users');
+        const users = savedUsers ? JSON.parse(savedUsers) : [];
+        users.push(userWithEmptyPassword);
+        localStorage.setItem('users', JSON.stringify(users));
         
         toast({
           title: "Inscription réussie",
@@ -158,7 +164,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         currentUser,
         user: currentUser, // Alias pour compatibilité
         isAuthenticated: !!currentUser,
-        isAdmin, // Ajout de la propriété isAdmin
+        isAdmin,
         isLoading,
         login,
         register,

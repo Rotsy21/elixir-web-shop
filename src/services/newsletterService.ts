@@ -80,8 +80,24 @@ export const newsletterService = {
   deleteNewsletter: async (id: string): Promise<boolean> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. L'inscription n'a pas été supprimée.");
-        throw new Error("MongoDB non connecté");
+        console.warn("MongoDB non connecté. Suppression locale.");
+        
+        const savedNewsletters = localStorage.getItem('newsletters');
+        const newsletters = savedNewsletters ? JSON.parse(savedNewsletters) : [];
+        const filteredNewsletters = newsletters.filter((n: Newsletter) => n.id !== id);
+        
+        if (filteredNewsletters.length === newsletters.length) {
+          throw new Error("Inscription non trouvée");
+        }
+        
+        localStorage.setItem('newsletters', JSON.stringify(filteredNewsletters));
+        
+        toast({
+          title: "Inscription supprimée",
+          description: "L'inscription à la newsletter a été supprimée avec succès.",
+        });
+        
+        return true;
       }
       
       console.log(`Suppression de l'inscription newsletter ${id} dans MongoDB`);

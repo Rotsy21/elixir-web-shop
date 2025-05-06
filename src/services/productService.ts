@@ -75,8 +75,25 @@ export const productService = {
   updateProduct: async (id: string, product: Partial<Product>): Promise<Product> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. Le produit n'a pas été mis à jour.");
-        throw new Error("MongoDB non connecté");
+        console.warn("MongoDB non connecté. Mise à jour locale.");
+        
+        const savedProducts = localStorage.getItem('products');
+        const products = savedProducts ? JSON.parse(savedProducts) : [];
+        const productIndex = products.findIndex((p: Product) => p.id === id);
+        
+        if (productIndex === -1) {
+          throw new Error("Produit non trouvé");
+        }
+        
+        products[productIndex] = { ...products[productIndex], ...product };
+        localStorage.setItem('products', JSON.stringify(products));
+        
+        toast({
+          title: "Produit mis à jour",
+          description: "Le produit a été mis à jour avec succès.",
+        });
+        
+        return products[productIndex];
       }
       
       console.log(`Mise à jour du produit ${id} dans MongoDB:`, product);
@@ -93,8 +110,24 @@ export const productService = {
   deleteProduct: async (id: string): Promise<boolean> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. Le produit n'a pas été supprimé.");
-        throw new Error("MongoDB non connecté");
+        console.warn("MongoDB non connecté. Suppression locale.");
+        
+        const savedProducts = localStorage.getItem('products');
+        const products = savedProducts ? JSON.parse(savedProducts) : [];
+        const filteredProducts = products.filter((p: Product) => p.id !== id);
+        
+        if (filteredProducts.length === products.length) {
+          throw new Error("Produit non trouvé");
+        }
+        
+        localStorage.setItem('products', JSON.stringify(filteredProducts));
+        
+        toast({
+          title: "Produit supprimé",
+          description: "Le produit a été supprimé avec succès.",
+        });
+        
+        return true;
       }
       
       console.log(`Suppression du produit ${id} dans MongoDB`);
