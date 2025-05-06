@@ -64,10 +64,20 @@ export default function RegisterPage() {
         navigate("/");
       } else {
         setError("L'inscription a échoué. Veuillez réessayer.");
+        toast({
+          title: "Erreur",
+          description: "Une erreur s'est produite lors de l'inscription",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Erreur lors de l'inscription:", error);
       setError("Une erreur s'est produite lors de l'inscription.");
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de l'inscription",
+        variant: "destructive",
+      });
     }
   };
 

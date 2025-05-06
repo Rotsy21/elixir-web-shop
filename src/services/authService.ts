@@ -12,6 +12,7 @@ import {
   logSecurityEvent 
 } from "@/utils/securityUtils";
 import { createAppError, ErrorType } from "@/utils/errorHandler";
+import { toast } from "@/hooks/use-toast";
 
 // Simuler le stockage des jetons d'accès et de rafraîchissement
 // En production, utilisez un stockage sécurisé comme HttpOnly cookies
@@ -153,6 +154,11 @@ export const authService = {
       
       // Valider l'email
       if (!validateEmail(email)) {
+        toast({
+          title: "Erreur",
+          description: "Format d'email invalide",
+          variant: "destructive",
+        });
         throw createAppError(
           ErrorType.VALIDATION,
           "Format d'email invalide",
@@ -164,6 +170,11 @@ export const authService = {
       // Vérifier la force du mot de passe
       const passwordCheck = validatePasswordStrength(password);
       if (!passwordCheck.isValid) {
+        toast({
+          title: "Erreur",
+          description: passwordCheck.message,
+          variant: "destructive",
+        });
         throw createAppError(
           ErrorType.VALIDATION,
           passwordCheck.message,
@@ -182,6 +193,11 @@ export const authService = {
           username,
           email
         });
+        toast({
+          title: "Erreur de sécurité",
+          description: "Tentative d'injection détectée",
+          variant: "destructive",
+        });
         throw createAppError(
           ErrorType.SECURITY,
           "Tentative d'injection détectée",
@@ -190,11 +206,29 @@ export const authService = {
         );
       }
       
+      // Vérifier si l'email existe déjà
+      const savedUsers = localStorage.getItem('users');
+      const users = savedUsers ? JSON.parse(savedUsers) : [];
+      const existingUser = users.find((u: User) => u.email === email);
+      
+      if (existingUser) {
+        toast({
+          title: "Erreur d'inscription",
+          description: "Cette adresse email est déjà utilisée",
+          variant: "destructive",
+        });
+        return null;
+      }
+      
       // En production, hachage sécurisé du mot de passe avant stockage
       // Simuler l'inscription
       const result = await mockRegister(sanitizedUsername, email, password);
       
       if (result) {
+        // Ajouter l'utilisateur à la liste des utilisateurs dans localStorage
+        users.push(result);
+        localStorage.setItem('users', JSON.stringify(users));
+        
         logSecurityEvent(`Inscription réussie pour: ${email}`, 'info');
         
         // Ne jamais renvoyer le mot de passe
@@ -206,6 +240,11 @@ export const authService = {
     } catch (error) {
       // Journaliser l'erreur sans exposer les détails sensibles
       logSecurityEvent("Erreur d'inscription", 'error', { error });
+      toast({
+        title: "Erreur",
+        description: "Une erreur s'est produite lors de l'inscription",
+        variant: "destructive",
+      });
       throw error;
     }
   },
@@ -238,12 +277,23 @@ export const authService = {
 async function mockLogin(email: string, password: string): Promise<User | null> {
   // Simuler la recherche dans une base de données
   // En production, utilisez une vraie base de données et comparez des hachages sécurisés
+  const savedUsers = localStorage.getItem('users');
+  const users = savedUsers ? JSON.parse(savedUsers) : [];
+  
+  // Comparer email et mot de passe
+  const user = users.find((u: User) => u.email === email && u.password === password);
+  
+  if (user) {
+    return user;
+  }
+  
+  // Utilisateurs de test hardcodés
   if (email === "admin@example.com" && password === "admin123") {
     return {
       id: "1",
       username: "admin",
       email: "admin@example.com",
-      password: "hashed_password", // Normalement, ceci ne serait jamais retourné
+      password: "admin123", // Normalement, ceci ne serait jamais retourné
       role: "admin",
       createdAt: new Date().toISOString()
     };
@@ -254,7 +304,7 @@ async function mockLogin(email: string, password: string): Promise<User | null> 
       id: "2",
       username: "user1",
       email: "user1@example.com",
-      password: "hashed_password", // Normalement, ceci ne serait jamais retourné
+      password: "user123", // Normalement, ceci ne serait jamais retourné
       role: "user",
       createdAt: new Date().toISOString()
     };
@@ -264,13 +314,15 @@ async function mockLogin(email: string, password: string): Promise<User | null> 
 }
 
 async function mockRegister(username: string, email: string, password: string): Promise<User | null> {
-  // Simuler l'enregistrement dans une base de données
-  // En production, vérifiez d'abord si l'utilisateur existe
+  // Générer un ID unique
+  const id = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+  
+  // Créer le nouvel utilisateur
   return {
-    id: `user_${Date.now()}`,
+    id,
     username,
     email,
-    password: "hashed_password", // Normalement, le mot de passe serait haché
+    password, // En production, il faudrait hacher le mot de passe
     role: "user",
     createdAt: new Date().toISOString()
   };

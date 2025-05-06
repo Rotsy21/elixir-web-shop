@@ -37,7 +37,8 @@ export const productService = {
         const newProduct: Product = {
           ...product,
           id: crypto.randomUUID(),
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
+          featured: product.featured || false
         };
         
         // Sauvegarde locale pour démonstration
@@ -59,7 +60,8 @@ export const productService = {
       const newProduct: Product = {
         ...product,
         id: crypto.randomUUID(),
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        featured: product.featured || false
       };
       
       return newProduct;

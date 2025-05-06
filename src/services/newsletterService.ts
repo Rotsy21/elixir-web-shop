@@ -34,6 +34,20 @@ export const newsletterService = {
       if (!MONGODB_CONFIG.isConnected) {
         console.warn("MongoDB non connecté. L'inscription sera stockée localement.");
         
+        // Vérifier si l'email existe déjà
+        const savedNewsletters = localStorage.getItem('newsletters');
+        const newsletters = savedNewsletters ? JSON.parse(savedNewsletters) : [];
+        const existingEmail = newsletters.find((n: Newsletter) => n.email === email);
+        
+        if (existingEmail) {
+          toast({
+            title: "Déjà inscrit",
+            description: "Cette adresse email est déjà inscrite à la newsletter.",
+          });
+          // Retourner l'inscription existante au lieu de lancer une erreur
+          return existingEmail;
+        }
+        
         const newNewsletter: Newsletter = {
           id: crypto.randomUUID(),
           email,
@@ -41,8 +55,6 @@ export const newsletterService = {
         };
         
         // Sauvegarde locale pour démonstration
-        const savedNewsletters = localStorage.getItem('newsletters');
-        const newsletters = savedNewsletters ? JSON.parse(savedNewsletters) : [];
         newsletters.push(newNewsletter);
         localStorage.setItem('newsletters', JSON.stringify(newsletters));
         

@@ -29,7 +29,7 @@ export const userService = {
   /**
    * Ajoute un nouvel utilisateur
    */
-  addUser: async (user: Omit<User, 'id' | 'createdAt'>): Promise<{ success: boolean; id: string }> => {
+  addUser: async (user: Omit<User, 'id' | 'createdAt'>): Promise<User> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
         console.warn("MongoDB non connecté. L'utilisateur sera stocké localement.");
@@ -43,6 +43,18 @@ export const userService = {
         // Sauvegarde locale pour démonstration
         const savedUsers = localStorage.getItem('users');
         const users = savedUsers ? JSON.parse(savedUsers) : [];
+        
+        // Vérifier si l'email existe déjà
+        const existingUserIndex = users.findIndex((u: User) => u.email === user.email);
+        if (existingUserIndex >= 0) {
+          toast({
+            title: "Erreur",
+            description: "Un utilisateur avec cet email existe déjà",
+            variant: "destructive",
+          });
+          throw new Error("Email déjà utilisé");
+        }
+        
         users.push(newUser);
         localStorage.setItem('users', JSON.stringify(users));
         
@@ -51,7 +63,7 @@ export const userService = {
           description: "Le compte a été créé avec succès.",
         });
         
-        return { success: true, id: newUser.id };
+        return newUser;
       }
       
       console.log("Ajout d'un utilisateur dans MongoDB:", user);
@@ -62,10 +74,10 @@ export const userService = {
         createdAt: new Date().toISOString()
       };
       
-      return { success: true, id: newUser.id };
+      return newUser;
     } catch (error) {
       console.error("Erreur lors de l'ajout de l'utilisateur:", error);
-      return { success: false, id: "" };
+      throw error;
     }
   },
 

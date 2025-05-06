@@ -90,6 +90,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       const user = await authService.register(username, email, password);
+      
       if (user) {
         // On doit convertir le résultat pour inclure un mot de passe (vide) pour satisfaire TypeScript
         const userWithEmptyPassword = {
@@ -101,12 +102,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         // Sauvegarder l'utilisateur dans le localStorage
         localStorage.setItem('currentUser', JSON.stringify(userWithEmptyPassword));
-
-        // Ajouter également à la liste des utilisateurs
-        const savedUsers = localStorage.getItem('users');
-        const users = savedUsers ? JSON.parse(savedUsers) : [];
-        users.push(userWithEmptyPassword);
-        localStorage.setItem('users', JSON.stringify(users));
         
         toast({
           title: "Inscription réussie",
@@ -117,20 +112,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         navigate("/");
         return true;
       }
-      toast({
-        title: "Échec de l'inscription",
-        description: "Impossible de créer un compte avec ces informations",
-        variant: "destructive",
-      });
+      
       setIsLoading(false);
       return false;
     } catch (error) {
       console.error("Erreur d'inscription:", error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de l'inscription",
-        variant: "destructive",
-      });
       setIsLoading(false);
       return false;
     }

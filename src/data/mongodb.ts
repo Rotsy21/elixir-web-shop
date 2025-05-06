@@ -17,6 +17,7 @@ const mongodbHelpers = {
   ...userService,
   ...contactService,
   ...newsletterService,
+  ...orderService,
   ...promotionService,
   ...developerSpecialtyService,
   ...statisticsService
