@@ -9,12 +9,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Product } from "@/models/types";
 import { ProductList } from "./ProductList";
 import { AddProductDialog } from "./AddProductDialog";
 import { EditProductDialog } from "./EditProductDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "@/hooks/use-toast";
+import { productService } from "@/services/productService";
 
 interface ProductsTableProps {
   products: Product[];
@@ -28,13 +30,33 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [currentProduct, setCurrentProduct] = useState<Product | null>(null);
   const isMobile = useIsMobile();
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const filteredProducts = products.filter(
-    (product) =>
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.id.toString().includes(searchTerm)
-  );
+  const filteredProducts = useMemo(() => {
+    return products.filter(
+      (product) =>
+        product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        product.id.toString().includes(searchTerm)
+    );
+  }, [products, searchTerm]);
+  
+  // Calculate total pages
+  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / itemsPerPage));
+  
+  // Get current page items
+  const currentItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredProducts.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredProducts, currentPage, itemsPerPage]);
+  
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const handleEdit = (id: string) => {
     const productToEdit = products.find(product => product.id === id);
@@ -46,10 +68,27 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
 
   const handleDelete = async (id: string) => {
     try {
-      await mongodbHelpers.deleteProduct(id);
+      await productService.deleteProduct(id);
       setProducts(products.filter(product => product.id !== id));
+      
+      // Reset to page 1 if current page becomes empty
+      const newTotalItems = filteredProducts.length - 1;
+      const newTotalPages = Math.max(1, Math.ceil(newTotalItems / itemsPerPage));
+      if (currentPage > newTotalPages) {
+        setCurrentPage(newTotalPages);
+      }
+      
+      toast({
+        title: "Produit supprimé",
+        description: "Le produit a été supprimé avec succès.",
+      });
     } catch (error) {
       console.error("Error deleting product:", error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de supprimer le produit.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -90,16 +129,23 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
                 placeholder="Rechercher un produit..." 
                 className="pl-8"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)} 
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1); // Reset to first page on search
+                }} 
               />
             </div>
           </div>
           
           <ProductList 
-            products={filteredProducts} 
+            products={currentItems} 
             isLoading={isLoading} 
             onEdit={handleEdit} 
-            onDelete={handleDelete} 
+            onDelete={handleDelete}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={itemsPerPage}
           />
         </CardContent>
       </Card>
