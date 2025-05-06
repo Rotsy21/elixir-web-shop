@@ -1,8 +1,9 @@
+
 import { TabsContent } from "@/components/ui/tabs";
 import { Product, User, ContactMessage, Newsletter, Order, Promotion, DeveloperSpecialty, SiteStatistics } from "@/models/types";
 import { Dashboard } from "@/components/admin/Dashboard";
 import { ProductsTable } from "@/components/admin/products/ProductsTable";
-import { UsersTable } from "@/components/admin/UsersTable";
+import { UsersTable } from "@/components/admin/users/UsersTable";
 import { ContactsTable } from "@/components/admin/ContactsTable";
 import { NewslettersTable } from "@/components/admin/NewslettersTable";
 import { OrdersTable } from "@/components/admin/OrdersTable";
