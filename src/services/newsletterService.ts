@@ -1,7 +1,7 @@
 
 import { MONGODB_CONFIG } from '@/config/mongoConfig';
 import { Newsletter } from '@/models/types';
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 /**
  * Service pour gérer les inscriptions à la newsletter dans MongoDB
@@ -40,10 +40,7 @@ export const newsletterService = {
         const existingEmail = newsletters.find((n: Newsletter) => n.email === email);
         
         if (existingEmail) {
-          toast({
-            title: "Déjà inscrit",
-            description: "Cette adresse email est déjà inscrite à la newsletter.",
-          });
+          toast.info("Cette adresse email est déjà inscrite à la newsletter.");
           // Retourner l'inscription existante au lieu de lancer une erreur
           return existingEmail;
         }
@@ -58,10 +55,7 @@ export const newsletterService = {
         newsletters.push(newNewsletter);
         localStorage.setItem('newsletters', JSON.stringify(newsletters));
         
-        toast({
-          title: "Inscription réussie",
-          description: "Votre inscription à la newsletter a été enregistrée.",
-        });
+        toast.success("Votre inscription à la newsletter a été enregistrée.");
         
         return newNewsletter;
       }
@@ -74,10 +68,7 @@ export const newsletterService = {
         createdAt: new Date().toISOString()
       };
       
-      toast({
-        title: "Inscription réussie",
-        description: "Votre inscription à la newsletter a été stockée avec succès dans MongoDB.",
-      });
+      toast.success("Votre inscription à la newsletter a été enregistrée.");
       
       return newNewsletter;
     } catch (error) {
@@ -104,10 +95,7 @@ export const newsletterService = {
         
         localStorage.setItem('newsletters', JSON.stringify(filteredNewsletters));
         
-        toast({
-          title: "Inscription supprimée",
-          description: "L'inscription à la newsletter a été supprimée avec succès.",
-        });
+        toast.success("L'inscription à la newsletter a été supprimée avec succès.");
         
         return true;
       }

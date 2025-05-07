@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminHeader } from "@/components/admin/AdminHeader";
@@ -8,6 +8,7 @@ import { AdminTabs } from "./components/AdminTabs";
 import { AdminTabsContent } from "./components/AdminTabsContent";
 import { useAdminData } from "./hooks/useAdminData";
 import { Tabs } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
 export default function AdminPage() {
   const { user, isAdmin } = useAuth();
@@ -33,6 +34,25 @@ export default function AdminPage() {
     filteredPromotions,
     filteredSpecialties
   } = useAdminData(searchTerm);
+
+  useEffect(() => {
+    // Vérifier si les données sont vides
+    const checkEmptyData = () => {
+      if (isLoading) return;
+      
+      if (
+        products.length === 0 && 
+        users.length === 0 && 
+        contacts.length === 0 &&
+        newsletters.length === 0 &&
+        orders.length === 0
+      ) {
+        toast.info("Aucune donnée disponible. Créez des comptes, contacts, newsletters et commandes pour les voir apparaître ici.");
+      }
+    };
+    
+    checkEmptyData();
+  }, [isLoading, products, users, contacts, newsletters, orders]);
 
   // Vérifier si l'utilisateur est admin, sinon rediriger
   if (!isAdmin) {

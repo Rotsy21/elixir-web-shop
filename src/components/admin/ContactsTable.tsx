@@ -18,7 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useState } from "react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { mongodbHelpers } from "@/data/mongodb";
 import { ContactSearch } from "./contacts/ContactSearch";
 import { ContactDetailsDialog } from "./contacts/ContactDetailsDialog";
@@ -54,16 +54,9 @@ export function ContactsTable({ contacts: initialContacts, isLoading }: Contacts
   const handleMarkAsRead = async (id: string) => {
     try {
       await mongodbHelpers.updateContact(id, { read: true });
-      toast({
-        title: "Marquer comme lu",
-        description: `Message #${id} marqué comme lu.`,
-      });
+      toast.success(`Message #${id} marqué comme lu.`);
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de marquer le message comme lu.",
-        variant: "destructive",
-      });
+      toast.error("Impossible de marquer le message comme lu.");
     }
   };
 
@@ -71,16 +64,9 @@ export function ContactsTable({ contacts: initialContacts, isLoading }: Contacts
     try {
       await mongodbHelpers.deleteContact(id);
       setContacts(contacts.filter(contact => contact.id !== id));
-      toast({
-        title: "Message supprimé",
-        description: "Le message a été supprimé avec succès.",
-      });
+      toast.success("Message supprimé avec succès.");
     } catch (error) {
-      toast({
-        title: "Erreur",
-        description: "Impossible de supprimer le message.",
-        variant: "destructive",
-      });
+      toast.error("Impossible de supprimer le message.");
     }
   };
 
@@ -94,10 +80,7 @@ export function ContactsTable({ contacts: initialContacts, isLoading }: Contacts
           </CardDescription>
         </div>
         <Button size="sm" variant="outline" onClick={() => {
-          toast({
-            title: "Export des messages",
-            description: "Les données des messages ont été exportées.",
-          });
+          toast.success("Les données des messages ont été exportées.");
         }}>
           <Download className="mr-2 h-4 w-4" />
           Exporter

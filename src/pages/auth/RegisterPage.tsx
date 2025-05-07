@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Loader2, Eye, EyeOff } from "lucide-react";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 // Define form schema
 const registerSchema = z.object({
@@ -57,27 +57,16 @@ export default function RegisterPage() {
       console.log("Résultat de l'inscription:", success);
       
       if (success) {
-        toast({
-          title: "Inscription réussie",
-          description: `Bienvenue, ${data.username}!`,
-        });
+        toast.success(`Bienvenue, ${data.username}!`);
         navigate("/");
       } else {
         setError("L'inscription a échoué. Veuillez réessayer.");
-        toast({
-          title: "Erreur",
-          description: "Une erreur s'est produite lors de l'inscription",
-          variant: "destructive",
-        });
+        toast.error("Une erreur s'est produite lors de l'inscription");
       }
     } catch (error) {
       console.error("Erreur lors de l'inscription:", error);
       setError("Une erreur s'est produite lors de l'inscription.");
-      toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de l'inscription",
-        variant: "destructive",
-      });
+      toast.error("Une erreur s'est produite lors de l'inscription");
     }
   };
 

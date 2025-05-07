@@ -2,7 +2,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { User } from "@/models/types";
 import { authService } from "@/services/authService";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 
 export interface AuthContextType {
@@ -53,10 +53,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Sauvegarder l'utilisateur dans le localStorage
         localStorage.setItem('currentUser', JSON.stringify(userWithEmptyPassword));
         
-        toast({
-          title: "Connexion réussie",
-          description: `Bienvenue, ${user.username}!`,
-        });
+        toast.success(`Bienvenue, ${user.username}!`);
         
         setIsLoading(false);
         
@@ -66,20 +63,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         return true;
       }
-      toast({
-        title: "Échec de la connexion",
-        description: "Email ou mot de passe incorrect",
-        variant: "destructive",
-      });
+      toast.error("Email ou mot de passe incorrect");
       setIsLoading(false);
       return false;
     } catch (error) {
       console.error("Erreur de connexion:", error);
-      toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de la connexion",
-        variant: "destructive",
-      });
+      toast.error("Une erreur s'est produite lors de la connexion");
       setIsLoading(false);
       return false;
     }
@@ -103,10 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         // Sauvegarder l'utilisateur dans le localStorage
         localStorage.setItem('currentUser', JSON.stringify(userWithEmptyPassword));
         
-        toast({
-          title: "Inscription réussie",
-          description: `Bienvenue, ${user.username}!`,
-        });
+        toast.success(`Bienvenue, ${user.username}!`);
         
         setIsLoading(false);
         navigate("/");
@@ -134,10 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     localStorage.removeItem('currentUser');
     
     setCurrentUser(null);
-    toast({
-      title: "Déconnexion réussie",
-      description: "Vous avez été déconnecté avec succès",
-    });
+    toast.success("Vous avez été déconnecté avec succès");
     navigate("/login");
   };
 

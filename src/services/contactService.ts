@@ -1,7 +1,7 @@
 
 import { MONGODB_CONFIG } from '@/config/mongoConfig';
 import { ContactMessage } from '@/models/types';
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 /**
  * Service pour gérer les messages de contact dans MongoDB
@@ -47,10 +47,7 @@ export const contactService = {
         contacts.push(newContact);
         localStorage.setItem('contacts', JSON.stringify(contacts));
         
-        toast({
-          title: "Message envoyé",
-          description: "Votre message a été stocké avec succès.",
-        });
+        toast.success("Votre message a été envoyé avec succès.");
         
         return newContact;
       }
@@ -64,14 +61,12 @@ export const contactService = {
         createdAt: new Date().toISOString()
       };
       
-      toast({
-        title: "Message envoyé",
-        description: "Votre message a été stocké avec succès dans MongoDB.",
-      });
+      toast.success("Votre message a été envoyé avec succès.");
       
       return newContact;
     } catch (error) {
       console.error("Erreur lors de l'ajout du message de contact:", error);
+      toast.error("Une erreur s'est produite lors de l'envoi du message.");
       throw error;
     }
   },
@@ -82,8 +77,19 @@ export const contactService = {
   updateContact: async (id: string, contact: Partial<ContactMessage>): Promise<ContactMessage> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. Le message n'a pas été mis à jour.");
-        throw new Error("MongoDB non connecté");
+        console.warn("MongoDB non connecté. Mise à jour locale.");
+        const savedContacts = localStorage.getItem('contacts');
+        const contacts = savedContacts ? JSON.parse(savedContacts) : [];
+        
+        const contactIndex = contacts.findIndex((c: ContactMessage) => c.id === id);
+        if (contactIndex === -1) {
+          throw new Error("Message non trouvé");
+        }
+        
+        contacts[contactIndex] = { ...contacts[contactIndex], ...contact };
+        localStorage.setItem('contacts', JSON.stringify(contacts));
+        
+        return contacts[contactIndex];
       }
       
       console.log(`Mise à jour du message de contact ${id} dans MongoDB:`, contact);
@@ -100,8 +106,20 @@ export const contactService = {
   markAsRead: async (id: string): Promise<ContactMessage> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. Le message n'a pas été marqué comme lu.");
-        throw new Error("MongoDB non connecté");
+        console.warn("MongoDB non connecté. Mise à jour locale.");
+        
+        const savedContacts = localStorage.getItem('contacts');
+        const contacts = savedContacts ? JSON.parse(savedContacts) : [];
+        
+        const contactIndex = contacts.findIndex((c: ContactMessage) => c.id === id);
+        if (contactIndex === -1) {
+          throw new Error("Message non trouvé");
+        }
+        
+        contacts[contactIndex].read = true;
+        localStorage.setItem('contacts', JSON.stringify(contacts));
+        
+        return contacts[contactIndex];
       }
       
       console.log(`Marquage du message ${id} comme lu dans MongoDB`);
@@ -118,8 +136,16 @@ export const contactService = {
   deleteContact: async (id: string): Promise<boolean> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. Le message n'a pas été supprimé.");
-        throw new Error("MongoDB non connecté");
+        console.warn("MongoDB non connecté. Suppression locale.");
+        
+        const savedContacts = localStorage.getItem('contacts');
+        const contacts = savedContacts ? JSON.parse(savedContacts) : [];
+        
+        const newContacts = contacts.filter((c: ContactMessage) => c.id !== id);
+        localStorage.setItem('contacts', JSON.stringify(newContacts));
+        
+        toast.success("Message supprimé avec succès");
+        return true;
       }
       
       console.log(`Suppression du message de contact ${id} dans MongoDB`);

@@ -1,7 +1,7 @@
 
 import { MONGODB_CONFIG } from '@/config/mongoConfig';
 import { User } from '@/models/types';
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 /**
  * Service pour gérer les utilisateurs dans MongoDB
@@ -47,21 +47,14 @@ export const userService = {
         // Vérifier si l'email existe déjà
         const existingUserIndex = users.findIndex((u: User) => u.email === user.email);
         if (existingUserIndex >= 0) {
-          toast({
-            title: "Erreur",
-            description: "Un utilisateur avec cet email existe déjà",
-            variant: "destructive",
-          });
+          toast.error("Un utilisateur avec cet email existe déjà");
           throw new Error("Email déjà utilisé");
         }
         
         users.push(newUser);
         localStorage.setItem('users', JSON.stringify(users));
         
-        toast({
-          title: "Compte créé",
-          description: "Le compte a été créé avec succès.",
-        });
+        toast.success("Le compte a été créé avec succès.");
         
         return newUser;
       }
@@ -100,10 +93,7 @@ export const userService = {
         users[userIndex] = { ...users[userIndex], ...user };
         localStorage.setItem('users', JSON.stringify(users));
         
-        toast({
-          title: "Utilisateur mis à jour",
-          description: "L'utilisateur a été mis à jour avec succès.",
-        });
+        toast.success("L'utilisateur a été mis à jour avec succès.");
         
         return users[userIndex];
       }
@@ -134,10 +124,7 @@ export const userService = {
         
         localStorage.setItem('users', JSON.stringify(filteredUsers));
         
-        toast({
-          title: "Utilisateur supprimé",
-          description: "L'utilisateur a été supprimé avec succès.",
-        });
+        toast.success("L'utilisateur a été supprimé avec succès.");
         
         return true;
       }

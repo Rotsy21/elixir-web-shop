@@ -10,6 +10,7 @@ import { promotionService } from "@/services/promotionService";
 import { developerSpecialtyService } from "@/services/developerSpecialtyService";
 import { statisticsService } from "@/services/statisticsService";
 import { applySecurityHeaders } from "@/utils/securityMiddleware";
+import { toast } from "sonner";
 
 export function useAdminData(searchTerm: string) {
   const [products, setProducts] = useState<Product[]>([]);
@@ -21,6 +22,7 @@ export function useAdminData(searchTerm: string) {
   const [specialties, setSpecialties] = useState<DeveloperSpecialty[]>([]);
   const [statistics, setStatistics] = useState<SiteStatistics[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
     // Appliquer les en-têtes de sécurité
@@ -28,6 +30,7 @@ export function useAdminData(searchTerm: string) {
     
     const fetchData = async () => {
       setIsLoading(true);
+      setLoadError(null);
       try {
         const [
           productsData, 
@@ -41,7 +44,7 @@ export function useAdminData(searchTerm: string) {
         ] = await Promise.all([
           productService.getAllProducts(),
           userService.getAllUsers(),
-          contactService.getAllContacts ? contactService.getAllContacts() : [],
+          contactService.getAllContacts(),
           newsletterService.getAllNewsletters(),
           orderService.getAllOrders(),
           promotionService.getAllPromotions ? promotionService.getAllPromotions() : [],
@@ -53,7 +56,8 @@ export function useAdminData(searchTerm: string) {
           produits: productsData.length, 
           utilisateurs: usersData.length,
           contacts: contactsData.length,
-          newsletters: newslettersData.length
+          newsletters: newslettersData.length,
+          commandes: ordersData.length
         });
         
         setProducts(productsData);
@@ -66,6 +70,8 @@ export function useAdminData(searchTerm: string) {
         setStatistics(statisticsData);
       } catch (error) {
         console.error("Erreur lors du chargement des données admin:", error);
+        setLoadError("Erreur lors du chargement des données");
+        toast.error("Erreur lors du chargement des données administrateur");
       } finally {
         setIsLoading(false);
       }
@@ -143,6 +149,7 @@ export function useAdminData(searchTerm: string) {
     specialties,
     statistics,
     isLoading,
+    loadError,
     filteredProducts,
     filteredUsers,
     filteredContacts,
