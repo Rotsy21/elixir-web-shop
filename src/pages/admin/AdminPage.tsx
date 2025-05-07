@@ -3,11 +3,11 @@ import { useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { AdminHeader } from "@/components/admin/AdminHeader";
-import { MongoDBConnector } from "@/components/admin/MongoDBConnector";
 import { AdminSearch } from "./components/AdminSearch";
 import { AdminTabs } from "./components/AdminTabs";
 import { AdminTabsContent } from "./components/AdminTabsContent";
 import { useAdminData } from "./hooks/useAdminData";
+import { Tabs } from "@/components/ui/tabs";
 
 export default function AdminPage() {
   const { user, isAdmin } = useAuth();
@@ -47,27 +47,29 @@ export default function AdminPage() {
           
           <AdminSearch searchTerm={searchTerm} setSearchTerm={setSearchTerm} />
           
-          <AdminTabs activeTab={activeTab} setActiveTab={setActiveTab} />
-          
-          <AdminTabsContent 
-            activeTab={activeTab}
-            isLoading={isLoading}
-            products={products}
-            filteredProducts={filteredProducts}
-            users={users}
-            filteredUsers={filteredUsers}
-            contacts={contacts}
-            filteredContacts={filteredContacts}
-            newsletters={newsletters}
-            filteredNewsletters={filteredNewsletters}
-            orders={orders}
-            filteredOrders={filteredOrders}
-            promotions={promotions}
-            filteredPromotions={filteredPromotions}
-            specialties={specialties}
-            filteredSpecialties={filteredSpecialties}
-            statistics={statistics}
-          />
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <AdminTabs activeTab={activeTab} setActiveTab={setActiveTab} />
+            
+            <AdminTabsContent 
+              activeTab={activeTab}
+              isLoading={isLoading}
+              products={products}
+              filteredProducts={filteredProducts}
+              users={users}
+              filteredUsers={filteredUsers}
+              contacts={contacts}
+              filteredContacts={filteredContacts}
+              newsletters={newsletters}
+              filteredNewsletters={filteredNewsletters}
+              orders={orders}
+              filteredOrders={filteredOrders}
+              promotions={promotions}
+              filteredPromotions={filteredPromotions}
+              specialties={specialties}
+              filteredSpecialties={filteredSpecialties}
+              statistics={statistics}
+            />
+          </Tabs>
         </div>
       </div>
     </div>
