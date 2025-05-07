@@ -49,6 +49,13 @@ export function useAdminData(searchTerm: string) {
           statisticsService.getAllStatistics ? statisticsService.getAllStatistics() : [],
         ]);
         
+        console.log("Données admin chargées:", { 
+          produits: productsData.length, 
+          utilisateurs: usersData.length,
+          contacts: contactsData.length,
+          newsletters: newslettersData.length
+        });
+        
         setProducts(productsData);
         setUsers(usersData);
         setContacts(contactsData);

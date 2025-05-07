@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { User } from "@/models/types";
@@ -27,14 +27,34 @@ export function UsersTable({ users: initialUsers, isLoading }: UsersTableProps) 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [currentUser, setCurrentUser] = useState<Partial<User> | null>(null);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.id.toString().includes(searchTerm)
-  );
+  const filteredUsers = useMemo(() => {
+    return users.filter(
+      (user) =>
+        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.role.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.id.toString().includes(searchTerm)
+    );
+  }, [users, searchTerm]);
+  
+  // Get current page items
+  const currentItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    return filteredUsers.slice(startIndex, startIndex + itemsPerPage);
+  }, [filteredUsers, currentPage, itemsPerPage]);
+  
+  // Calculate total pages
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / itemsPerPage));
+  
+  // Handle page change
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
 
   const handleEdit = (id: string) => {
     const userToEdit = users.find(user => user.id === id);
@@ -50,6 +70,8 @@ export function UsersTable({ users: initialUsers, isLoading }: UsersTableProps) 
 
   const handleUserAdded = (user: User) => {
     setUsers(prev => [...prev, user]);
+    // Après avoir ajouté un utilisateur, on va à la dernière page pour le voir
+    setCurrentPage(Math.ceil((users.length + 1) / itemsPerPage));
   };
 
   const handleUserUpdated = (updatedUser: User) => {
@@ -62,6 +84,13 @@ export function UsersTable({ users: initialUsers, isLoading }: UsersTableProps) 
 
   const handleUserDeleted = (id: string) => {
     setUsers(users.filter(user => user.id !== id));
+    
+    // Reset to page 1 if current page becomes empty
+    const newTotalItems = filteredUsers.length - 1;
+    const newTotalPages = Math.max(1, Math.ceil(newTotalItems / itemsPerPage));
+    if (currentPage > newTotalPages) {
+      setCurrentPage(newTotalPages);
+    }
   };
 
   const handleExport = () => {
@@ -101,16 +130,23 @@ export function UsersTable({ users: initialUsers, isLoading }: UsersTableProps) 
                 placeholder="Rechercher un utilisateur..." 
                 className="pl-8" 
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setCurrentPage(1); // Reset to first page on search
+                }}
               />
             </div>
           </div>
           
           <UsersList 
-            users={filteredUsers}
+            users={currentItems}
             isLoading={isLoading}
             onEdit={handleEdit}
             onUserDeleted={handleUserDeleted}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={itemsPerPage}
           />
         </CardContent>
       </Card>

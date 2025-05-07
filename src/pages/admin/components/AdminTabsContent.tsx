@@ -52,7 +52,7 @@ export function AdminTabsContent({
   filteredSpecialties,
   statistics
 }: AdminTabsContentProps) {
-  // On renvoie directement le contenu basé sur l'onglet actif
+  // Pour s'assurer que le contenu s'affiche correctement, on rend directement le contenu basé sur l'onglet actif
   if (activeTab === "dashboard") {
     return (
       <Dashboard 

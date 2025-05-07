@@ -1,8 +1,7 @@
 
-import { useState } from "react";
 import { User } from "@/models/types";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash2 } from "lucide-react";
+import { Edit, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -19,9 +18,22 @@ interface UsersListProps {
   isLoading: boolean;
   onEdit: (id: string) => void;
   onUserDeleted: (id: string) => void;
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  itemsPerPage: number;
 }
 
-export function UsersList({ users, isLoading, onEdit, onUserDeleted }: UsersListProps) {
+export function UsersList({ 
+  users, 
+  isLoading, 
+  onEdit, 
+  onUserDeleted,
+  currentPage,
+  totalPages,
+  onPageChange,
+  itemsPerPage
+}: UsersListProps) {
   const handleDelete = async (id: string) => {
     try {
       await mongodbHelpers.deleteUser(id);
@@ -37,6 +49,66 @@ export function UsersList({ users, isLoading, onEdit, onUserDeleted }: UsersList
         variant: "destructive",
       });
     }
+  };
+
+  // Pagination controls
+  const renderPaginationControls = () => {
+    if (totalPages <= 1) return null;
+
+    return (
+      <div className="flex items-center justify-between px-2 mt-4">
+        <div className="text-sm text-gray-500">
+          Page {currentPage} sur {totalPages}
+        </div>
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          {renderPageNumbers()}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
+  // Page number buttons
+  const renderPageNumbers = () => {
+    let pages = [];
+    
+    // Logic to show up to 5 page numbers, with current page in the middle if possible
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+    
+    if (endPage - startPage < 4) {
+      startPage = Math.max(1, endPage - 4);
+    }
+
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(
+        <Button
+          key={i}
+          variant={i === currentPage ? "default" : "outline"}
+          size="sm"
+          onClick={() => onPageChange(i)}
+        >
+          {i}
+        </Button>
+      );
+    }
+    
+    return pages;
   };
 
   return (
@@ -101,6 +173,7 @@ export function UsersList({ users, isLoading, onEdit, onUserDeleted }: UsersList
           )}
         </TableBody>
       </Table>
+      {renderPaginationControls()}
     </div>
   );
 }

@@ -169,6 +169,8 @@ export function ProductsTable({ products: initialProducts, isLoading }: Products
         onAdd={(newProduct) => {
           setProducts(prev => [...prev, newProduct]);
           setIsAddDialogOpen(false);
+          // Après avoir ajouté un produit, on va à la dernière page pour le voir
+          setCurrentPage(Math.ceil((products.length + 1) / itemsPerPage));
         }}
         isMobile={isMobile}
       />
