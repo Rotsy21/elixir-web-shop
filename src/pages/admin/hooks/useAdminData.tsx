@@ -1,13 +1,11 @@
 
 import { useState, useEffect } from "react";
-import { Product, User, ContactMessage, Newsletter, Order, Promotion, DeveloperSpecialty, SiteStatistics } from "@/models/types";
+import { Product, User, ContactMessage, Newsletter, Order, SiteStatistics } from "@/models/types";
 import { productService } from "@/services/productService";
 import { userService } from "@/services/userService";
 import { contactService } from "@/services/contactService";
 import { newsletterService } from "@/services/newsletterService";
 import { orderService } from "@/services/orderService";
-import { promotionService } from "@/services/promotionService";
-import { developerSpecialtyService } from "@/services/developerSpecialtyService";
 import { statisticsService } from "@/services/statisticsService";
 import { applySecurityHeaders } from "@/utils/securityMiddleware";
 import { toast } from "sonner";
@@ -18,8 +16,6 @@ export function useAdminData(searchTerm: string) {
   const [contacts, setContacts] = useState<ContactMessage[]>([]);
   const [newsletters, setNewsletters] = useState<Newsletter[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
-  const [specialties, setSpecialties] = useState<DeveloperSpecialty[]>([]);
   const [statistics, setStatistics] = useState<SiteStatistics[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -43,8 +39,6 @@ export function useAdminData(searchTerm: string) {
           contactsData, 
           newslettersData, 
           ordersData,
-          promotionsData,
-          specialtiesData,
           statisticsData
         ] = await Promise.all([
           productService.getAllProducts(),
@@ -52,8 +46,6 @@ export function useAdminData(searchTerm: string) {
           contactService.getAllContacts(),
           newsletterService.getAllNewsletters(),
           orderService.getAllOrders(),
-          promotionService.getAllPromotions ? promotionService.getAllPromotions() : [],
-          developerSpecialtyService.getAllSpecialties ? developerSpecialtyService.getAllSpecialties() : [],
           statisticsService.getAllStatistics ? statisticsService.getAllStatistics() : [],
         ]);
         
@@ -70,8 +62,6 @@ export function useAdminData(searchTerm: string) {
         setContacts(contactsData);
         setNewsletters(newslettersData);
         setOrders(ordersData);
-        setPromotions(promotionsData);
-        setSpecialties(specialtiesData);
         setStatistics(statisticsData);
       } catch (error) {
         console.error("Erreur lors du chargement des données admin:", error);
@@ -127,31 +117,12 @@ export function useAdminData(searchTerm: string) {
       )
     : orders;
 
-  // Filtrer les promotions en fonction du terme de recherche
-  const filteredPromotions = searchTerm
-    ? promotions.filter(p => 
-        p.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (p.couponCode && p.couponCode.toLowerCase().includes(searchTerm.toLowerCase()))
-      )
-    : promotions;
-    
-  // Filtrer les spécialités en fonction du terme de recherche
-  const filteredSpecialties = searchTerm
-    ? specialties.filter(s => 
-        s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.description.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : specialties;
-
   return {
     products,
     users,
     contacts,
     newsletters,
     orders,
-    promotions,
-    specialties,
     statistics,
     isLoading,
     loadError,
@@ -159,8 +130,6 @@ export function useAdminData(searchTerm: string) {
     filteredUsers,
     filteredContacts,
     filteredNewsletters,
-    filteredOrders,
-    filteredPromotions,
-    filteredSpecialties
+    filteredOrders
   };
 }

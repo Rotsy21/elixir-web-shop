@@ -23,17 +23,13 @@ export default function AdminPage() {
     contacts,
     newsletters,
     orders,
-    promotions,
-    specialties,
     statistics,
     isLoading,
     filteredProducts,
     filteredUsers,
     filteredContacts,
     filteredNewsletters,
-    filteredOrders,
-    filteredPromotions,
-    filteredSpecialties
+    filteredOrders
   } = useAdminData(searchTerm);
 
   useEffect(() => {
@@ -116,10 +112,6 @@ export default function AdminPage() {
               filteredNewsletters={filteredNewsletters}
               orders={orders}
               filteredOrders={filteredOrders}
-              promotions={promotions}
-              filteredPromotions={filteredPromotions}
-              specialties={specialties}
-              filteredSpecialties={filteredSpecialties}
               statistics={statistics}
             />
           </Tabs>

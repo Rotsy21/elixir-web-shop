@@ -81,6 +81,12 @@ export const contactService = {
         createdAt: new Date().toISOString()
       };
       
+      // Simuler l'ajout dans MongoDB
+      const savedContacts = localStorage.getItem('contacts');
+      const contacts = savedContacts ? JSON.parse(savedContacts) : [];
+      contacts.push(newContact);
+      localStorage.setItem('contacts', JSON.stringify(contacts));
+      
       toast.success("Votre message a été envoyé avec succès.");
       
       return newContact;
@@ -121,7 +127,20 @@ export const contactService = {
       }
       
       console.log(`Mise à jour du message de contact ${id} dans MongoDB:`, safeUpdates);
-      return { id, ...safeUpdates } as ContactMessage;
+      
+      // Simuler la mise à jour dans MongoDB
+      const savedContacts = localStorage.getItem('contacts');
+      const contacts = savedContacts ? JSON.parse(savedContacts) : [];
+      
+      const contactIndex = contacts.findIndex((c: ContactMessage) => c.id === id);
+      if (contactIndex === -1) {
+        throw new Error("Message non trouvé");
+      }
+      
+      contacts[contactIndex] = { ...contacts[contactIndex], ...safeUpdates };
+      localStorage.setItem('contacts', JSON.stringify(contacts));
+      
+      return contacts[contactIndex];
     } catch (error) {
       console.error("Erreur lors de la mise à jour du message de contact:", error);
       throw error;
@@ -151,7 +170,20 @@ export const contactService = {
       }
       
       console.log(`Marquage du message ${id} comme lu dans MongoDB`);
-      return { id, read: true } as ContactMessage;
+      
+      // Simuler le marquage dans MongoDB
+      const savedContacts = localStorage.getItem('contacts');
+      const contacts = savedContacts ? JSON.parse(savedContacts) : [];
+      
+      const contactIndex = contacts.findIndex((c: ContactMessage) => c.id === id);
+      if (contactIndex === -1) {
+        throw new Error("Message non trouvé");
+      }
+      
+      contacts[contactIndex].read = true;
+      localStorage.setItem('contacts', JSON.stringify(contacts));
+      
+      return contacts[contactIndex];
     } catch (error) {
       console.error("Erreur lors du marquage du message comme lu:", error);
       throw error;
@@ -177,6 +209,15 @@ export const contactService = {
       }
       
       console.log(`Suppression du message de contact ${id} dans MongoDB`);
+      
+      // Simuler la suppression dans MongoDB
+      const savedContacts = localStorage.getItem('contacts');
+      const contacts = savedContacts ? JSON.parse(savedContacts) : [];
+      
+      const newContacts = contacts.filter((c: ContactMessage) => c.id !== id);
+      localStorage.setItem('contacts', JSON.stringify(newContacts));
+      
+      toast.success("Message supprimé avec succès");
       return true;
     } catch (error) {
       console.error("Erreur lors de la suppression du message de contact:", error);

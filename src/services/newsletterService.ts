@@ -69,11 +69,26 @@ export const newsletterService = {
       
       console.log("Ajout d'une inscription newsletter dans MongoDB:", sanitizedEmail);
       
+      // Vérifier si l'email existe déjà
+      const savedNewsletters = localStorage.getItem('newsletters');
+      const newsletters = savedNewsletters ? JSON.parse(savedNewsletters) : [];
+      const existingEmail = newsletters.find((n: Newsletter) => n.email === sanitizedEmail);
+      
+      if (existingEmail) {
+        toast.info("Cette adresse email est déjà inscrite à la newsletter.");
+        // Retourner l'inscription existante au lieu de lancer une erreur
+        return existingEmail;
+      }
+      
       const newNewsletter: Newsletter = {
         id: crypto.randomUUID(),
         email: sanitizedEmail,
         createdAt: new Date().toISOString()
       };
+      
+      // Sauvegarde locale pour démonstration
+      newsletters.push(newNewsletter);
+      localStorage.setItem('newsletters', JSON.stringify(newsletters));
       
       toast.success("Votre inscription à la newsletter a été enregistrée.");
       
@@ -109,6 +124,20 @@ export const newsletterService = {
       }
       
       console.log(`Suppression de l'inscription newsletter ${id} dans MongoDB`);
+      
+      // Simuler la suppression dans MongoDB
+      const savedNewsletters = localStorage.getItem('newsletters');
+      const newsletters = savedNewsletters ? JSON.parse(savedNewsletters) : [];
+      const filteredNewsletters = newsletters.filter((n: Newsletter) => n.id !== id);
+      
+      if (filteredNewsletters.length === newsletters.length) {
+        throw new Error("Inscription non trouvée");
+      }
+      
+      localStorage.setItem('newsletters', JSON.stringify(filteredNewsletters));
+      
+      toast.success("L'inscription à la newsletter a été supprimée avec succès.");
+      
       return true;
     } catch (error) {
       console.error("Erreur lors de la suppression de l'inscription newsletter:", error);
