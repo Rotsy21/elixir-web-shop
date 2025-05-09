@@ -1,3 +1,4 @@
+
 # Welcome to your Lovable project
 
 ## Project info
@@ -36,6 +37,21 @@ npm i
 npm run dev
 ```
 
+## Running the Express backend server
+
+To run the Express backend server with MongoDB:
+
+```sh
+# Make sure MongoDB is running locally
+# Install server dependencies if needed
+npm install express mongoose cors dotenv
+
+# Start the Express server
+node server.js
+```
+
+The server will be available at http://localhost:5000
+
 **Edit a file directly in GitHub**
 
 - Navigate to the desired file(s).
@@ -59,6 +75,7 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Express.js and MongoDB for the backend
 
 ## How can I deploy this project?
 
@@ -71,3 +88,4 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
