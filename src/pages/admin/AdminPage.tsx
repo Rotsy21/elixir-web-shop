@@ -9,6 +9,7 @@ import { AdminTabsContent } from "./components/AdminTabsContent";
 import { useAdminData } from "./hooks/useAdminData";
 import { Tabs } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { logSecurityEvent } from "@/utils/securityUtils";
 
 export default function AdminPage() {
   const { user, isAdmin } = useAuth();
@@ -36,6 +37,14 @@ export default function AdminPage() {
   } = useAdminData(searchTerm);
 
   useEffect(() => {
+    if (user && isAdmin) {
+      logSecurityEvent(`Utilisateur ${user.username} (${user.id}) a accédé au tableau de bord admin`, 'info', {
+        userId: user.id,
+        role: user.role,
+        timestamp: new Date().toISOString()
+      });
+    }
+    
     // Vérifier si les données sont vides
     const checkEmptyData = () => {
       if (isLoading) return;
@@ -49,13 +58,37 @@ export default function AdminPage() {
       ) {
         toast.info("Aucune donnée disponible. Créez des comptes, contacts, newsletters et commandes pour les voir apparaître ici.");
       }
+      
+      // Afficher des informations sur les données chargées
+      const dataStats = {
+        produits: products.length,
+        utilisateurs: users.length,
+        contacts: contacts.length,
+        newsletters: newsletters.length,
+        commandes: orders.length
+      };
+      
+      console.log("Données chargées dans le tableau de bord admin:", dataStats);
+      
+      if (contacts.length > 0) {
+        console.log("Exemple de contact:", contacts[0]);
+      }
+      
+      if (newsletters.length > 0) {
+        console.log("Exemple de newsletter:", newsletters[0]);
+      }
+      
+      if (orders.length > 0) {
+        console.log("Exemple de commande:", orders[0]);
+      }
     };
     
     checkEmptyData();
-  }, [isLoading, products, users, contacts, newsletters, orders]);
+  }, [isLoading, products, users, contacts, newsletters, orders, user, isAdmin]);
 
   // Vérifier si l'utilisateur est admin, sinon rediriger
   if (!isAdmin) {
+    toast.error("Vous n'avez pas les droits d'accès à cette page");
     return <Navigate to="/" replace />;
   }
 

@@ -2,6 +2,7 @@
 import { MONGODB_CONFIG } from '@/config/mongoConfig';
 import { ContactMessage } from '@/models/types';
 import { toast } from "sonner";
+import { sanitizeInput, validateEmail, detectInjectionAttempt } from '@/utils/securityUtils';
 
 /**
  * Service pour gérer les messages de contact dans MongoDB
@@ -13,7 +14,7 @@ export const contactService = {
   getAllContacts: async (): Promise<ContactMessage[]> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. Utilisation des données simulées.");
+        console.log("Récupération des contacts depuis localStorage");
         // Récupérer depuis localStorage pour démo
         const savedContacts = localStorage.getItem('contacts');
         return savedContacts ? JSON.parse(savedContacts) : [];
@@ -31,11 +32,30 @@ export const contactService = {
    */
   addContact: async (contact: Omit<ContactMessage, 'id' | 'createdAt' | 'read'>): Promise<ContactMessage> => {
     try {
+      // Sécurisation des entrées
+      const safeContact = {
+        name: sanitizeInput(contact.name),
+        email: sanitizeInput(contact.email),
+        subject: sanitizeInput(contact.subject),
+        message: sanitizeInput(contact.message),
+      };
+      
+      // Validation des entrées
+      if (!validateEmail(safeContact.email)) {
+        throw new Error("Format d'email invalide");
+      }
+      
+      // Détection de tentative d'injection
+      if (detectInjectionAttempt(safeContact.message) || 
+          detectInjectionAttempt(safeContact.subject)) {
+        throw new Error("Contenu non autorisé détecté");
+      }
+      
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. Le message sera stocké localement.");
+        console.log("Ajout contact dans localStorage:", safeContact);
         
         const newContact: ContactMessage = {
-          ...contact,
+          ...safeContact,
           id: crypto.randomUUID(),
           read: false,
           createdAt: new Date().toISOString()
@@ -52,10 +72,10 @@ export const contactService = {
         return newContact;
       }
       
-      console.log("Ajout d'un message de contact dans MongoDB:", contact);
+      console.log("Ajout d'un message de contact dans MongoDB:", safeContact);
       
       const newContact: ContactMessage = {
-        ...contact,
+        ...safeContact,
         id: crypto.randomUUID(),
         read: false,
         createdAt: new Date().toISOString()
@@ -66,7 +86,7 @@ export const contactService = {
       return newContact;
     } catch (error) {
       console.error("Erreur lors de l'ajout du message de contact:", error);
-      toast.error("Une erreur s'est produite lors de l'envoi du message.");
+      toast.error("Une erreur s'est produite lors de l'envoi du message: " + (error as Error).message);
       throw error;
     }
   },
@@ -76,8 +96,16 @@ export const contactService = {
    */
   updateContact: async (id: string, contact: Partial<ContactMessage>): Promise<ContactMessage> => {
     try {
+      // Sécurisation des entrées si nécessaire
+      const safeUpdates: Partial<ContactMessage> = {};
+      if (contact.name) safeUpdates.name = sanitizeInput(contact.name);
+      if (contact.email) safeUpdates.email = sanitizeInput(contact.email);
+      if (contact.subject) safeUpdates.subject = sanitizeInput(contact.subject);
+      if (contact.message) safeUpdates.message = sanitizeInput(contact.message);
+      if (contact.read !== undefined) safeUpdates.read = contact.read;
+      
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. Mise à jour locale.");
+        console.log("Mise à jour contact dans localStorage:", id);
         const savedContacts = localStorage.getItem('contacts');
         const contacts = savedContacts ? JSON.parse(savedContacts) : [];
         
@@ -86,14 +114,14 @@ export const contactService = {
           throw new Error("Message non trouvé");
         }
         
-        contacts[contactIndex] = { ...contacts[contactIndex], ...contact };
+        contacts[contactIndex] = { ...contacts[contactIndex], ...safeUpdates };
         localStorage.setItem('contacts', JSON.stringify(contacts));
         
         return contacts[contactIndex];
       }
       
-      console.log(`Mise à jour du message de contact ${id} dans MongoDB:`, contact);
-      return { id, ...contact } as ContactMessage;
+      console.log(`Mise à jour du message de contact ${id} dans MongoDB:`, safeUpdates);
+      return { id, ...safeUpdates } as ContactMessage;
     } catch (error) {
       console.error("Erreur lors de la mise à jour du message de contact:", error);
       throw error;
@@ -106,7 +134,7 @@ export const contactService = {
   markAsRead: async (id: string): Promise<ContactMessage> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. Mise à jour locale.");
+        console.log("Marquage comme lu dans localStorage:", id);
         
         const savedContacts = localStorage.getItem('contacts');
         const contacts = savedContacts ? JSON.parse(savedContacts) : [];
@@ -136,7 +164,7 @@ export const contactService = {
   deleteContact: async (id: string): Promise<boolean> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
-        console.warn("MongoDB non connecté. Suppression locale.");
+        console.log("Suppression contact dans localStorage:", id);
         
         const savedContacts = localStorage.getItem('contacts');
         const contacts = savedContacts ? JSON.parse(savedContacts) : [];

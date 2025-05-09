@@ -12,6 +12,7 @@ import { SpecialtiesTable } from "@/components/admin/SpecialtiesTable";
 import { StatisticsTable } from "@/components/admin/StatisticsTable";
 import { SettingsForm } from "@/components/admin/SettingsForm";
 import { MongoDBConnector } from "@/components/admin/MongoDBConnector";
+import { PostmanApiDocsComponent } from "@/components/admin/PostmanApiDocsComponent";
 
 interface AdminTabsContentProps {
   activeTab: string;
@@ -100,7 +101,10 @@ export function AdminTabsContent({
       </TabsContent>
       
       <TabsContent value="database">
-        <MongoDBConnector />
+        <div className="space-y-8">
+          <MongoDBConnector />
+          <PostmanApiDocsComponent />
+        </div>
       </TabsContent>
     </>
   );

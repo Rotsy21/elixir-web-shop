@@ -32,6 +32,11 @@ export function useAdminData(searchTerm: string) {
       setIsLoading(true);
       setLoadError(null);
       try {
+        // Pour déboguer - afficher les données existantes dans localStorage
+        console.log("LocalStorage - newsletters:", localStorage.getItem('newsletters'));
+        console.log("LocalStorage - contacts:", localStorage.getItem('contacts'));
+        console.log("LocalStorage - orders:", localStorage.getItem('orders'));
+        
         const [
           productsData, 
           usersData, 
