@@ -1,3 +1,4 @@
+
 /**
  * Service d'authentification sécurisé
  */
@@ -11,7 +12,7 @@ import {
   logSecurityEvent 
 } from "@/utils/securityUtils";
 import { createAppError, ErrorType } from "@/utils/errorHandler";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import axios from "axios";
 
 const API_URL = 'http://localhost:5000/api/users';
@@ -49,7 +50,9 @@ export const authService = {
       }
       
       try {
+        console.log(`Tentative de connexion à ${API_URL}/login avec email: ${email}`);
         const response = await axios.post(`${API_URL}/login`, { email, password });
+        console.log("Réponse de connexion:", response.data);
         
         // Générer les jetons d'authentification
         const userId = response.data.user.id;
@@ -81,6 +84,8 @@ export const authService = {
         console.error("Erreur de connexion:", err);
         if (err.response) {
           toast.error(err.response.data.message || "Échec de connexion");
+        } else {
+          toast.error("Erreur de connexion au serveur. Vérifiez que le serveur est en cours d'exécution.");
         }
         
         logSecurityEvent(`Échec de connexion pour: ${email}`, 'warning', { ipAddress });
@@ -103,11 +108,7 @@ export const authService = {
       
       // Valider l'email
       if (!validateEmail(email)) {
-        toast({
-          title: "Erreur",
-          description: "Format d'email invalide",
-          variant: "destructive",
-        });
+        toast.error("Format d'email invalide");
         throw createAppError(
           ErrorType.VALIDATION,
           "Format d'email invalide",
@@ -119,11 +120,7 @@ export const authService = {
       // Vérifier la force du mot de passe
       const passwordCheck = validatePasswordStrength(password);
       if (!passwordCheck.isValid) {
-        toast({
-          title: "Erreur",
-          description: passwordCheck.message,
-          variant: "destructive",
-        });
+        toast.error(passwordCheck.message);
         throw createAppError(
           ErrorType.VALIDATION,
           passwordCheck.message,
@@ -142,11 +139,7 @@ export const authService = {
           username,
           email
         });
-        toast({
-          title: "Erreur de sécurité",
-          description: "Tentative d'injection détectée",
-          variant: "destructive",
-        });
+        toast.error("Tentative d'injection détectée");
         throw createAppError(
           ErrorType.SECURITY,
           "Tentative d'injection détectée",
@@ -156,11 +149,13 @@ export const authService = {
       }
       
       try {
+        console.log(`Tentative d'inscription à ${API_URL}/register avec username: ${sanitizedUsername}, email: ${email}`);
         const response = await axios.post(`${API_URL}/register`, {
           username: sanitizedUsername,
           email,
           password
         });
+        console.log("Réponse d'inscription:", response.data);
         
         logSecurityEvent(`Inscription réussie pour: ${email}`, 'info');
         
@@ -178,17 +173,14 @@ export const authService = {
         console.error("Erreur d'inscription:", err);
         if (err.response) {
           toast.error(err.response.data.message || "Échec de l'inscription");
+        } else {
+          toast.error("Erreur de connexion au serveur. Vérifiez que le serveur est en cours d'exécution.");
         }
         return null;
       }
     } catch (error) {
       // Journaliser l'erreur sans exposer les détails sensibles
       logSecurityEvent("Erreur d'inscription", 'error', { error });
-      toast({
-        title: "Erreur",
-        description: "Une erreur s'est produite lors de l'inscription",
-        variant: "destructive",
-      });
       throw error;
     }
   },
