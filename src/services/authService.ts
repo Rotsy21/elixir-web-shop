@@ -54,6 +54,12 @@ export const authService = {
         const response = await axios.post(`${API_URL}/login`, { email, password });
         console.log("Réponse de connexion:", response.data);
         
+        if (!response.data || !response.data.user) {
+          console.error("Format de réponse invalide:", response.data);
+          toast.error("Format de réponse invalide du serveur");
+          return null;
+        }
+        
         // Générer les jetons d'authentification
         const userId = response.data.user.id;
         const now = Date.now();
@@ -76,6 +82,7 @@ export const authService = {
           createdAt: response.data.user.createdAt
         };
         
+        console.log("Utilisateur connecté:", user);
         return user;
       } catch (err: any) {
         // En cas d'échec, attendre un délai aléatoire pour prévenir les attaques par force brute
@@ -83,8 +90,10 @@ export const authService = {
         
         console.error("Erreur de connexion:", err);
         if (err.response) {
+          console.error("Réponse d'erreur:", err.response.data);
           toast.error(err.response.data.message || "Échec de connexion");
         } else {
+          console.error("Erreur réseau:", err.message);
           toast.error("Erreur de connexion au serveur. Vérifiez que le serveur est en cours d'exécution.");
         }
         
@@ -93,6 +102,7 @@ export const authService = {
       }
     } catch (error) {
       // Journaliser l'erreur sans exposer les détails sensibles
+      console.error("Erreur dans le processus d'authentification:", error);
       logSecurityEvent("Erreur d'authentification", 'error', { error });
       throw error;
     }
@@ -157,6 +167,12 @@ export const authService = {
         });
         console.log("Réponse d'inscription:", response.data);
         
+        if (!response.data || !response.data.user) {
+          console.error("Format de réponse invalide:", response.data);
+          toast.error("Format de réponse invalide du serveur");
+          return null;
+        }
+        
         logSecurityEvent(`Inscription réussie pour: ${email}`, 'info');
         
         // Convertir la réponse API en objet User
@@ -168,18 +184,22 @@ export const authService = {
           createdAt: response.data.user.createdAt
         };
         
+        console.log("Utilisateur inscrit:", user);
         return user;
       } catch (err: any) {
         console.error("Erreur d'inscription:", err);
         if (err.response) {
+          console.error("Réponse d'erreur:", err.response.data);
           toast.error(err.response.data.message || "Échec de l'inscription");
         } else {
+          console.error("Erreur réseau:", err.message);
           toast.error("Erreur de connexion au serveur. Vérifiez que le serveur est en cours d'exécution.");
         }
         return null;
       }
     } catch (error) {
       // Journaliser l'erreur sans exposer les détails sensibles
+      console.error("Erreur dans le processus d'inscription:", error);
       logSecurityEvent("Erreur d'inscription", 'error', { error });
       throw error;
     }
@@ -209,7 +229,7 @@ export const authService = {
   }
 };
 
-// Fonctions de simulation pour l'exemple
+// Fonctions de simulation pour l'exemple - à supprimer en production
 async function mockLogin(email: string, password: string): Promise<User | null> {
   // Simuler la recherche dans une base de données
   // En production, utilisez une vraie base de données et comparez des hachages sécurisés

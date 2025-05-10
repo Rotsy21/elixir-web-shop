@@ -29,7 +29,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const savedUser = localStorage.getItem('currentUser');
       if (savedUser) {
-        setCurrentUser(JSON.parse(savedUser));
+        const parsedUser = JSON.parse(savedUser);
+        console.log("Utilisateur chargé du localStorage:", parsedUser);
+        setCurrentUser(parsedUser);
       }
     } catch (error) {
       console.error("Erreur lors du chargement de l'utilisateur:", error);
@@ -40,8 +42,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log("Tentative de connexion pour:", email);
       const user = await authService.login(email, password);
+      
       if (user) {
+        console.log("Connexion réussie, utilisateur:", user);
         // On doit convertir le résultat pour inclure un mot de passe (vide) pour satisfaire TypeScript
         const userWithEmptyPassword = {
           ...user,
@@ -63,6 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         return true;
       }
+      console.log("Échec de connexion");
       toast.error("Email ou mot de passe incorrect");
       setIsLoading(false);
       return false;
@@ -78,9 +84,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (username: string, email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log("Tentative d'inscription pour:", email);
       const user = await authService.register(username, email, password);
       
       if (user) {
+        console.log("Inscription réussie, utilisateur:", user);
         // On doit convertir le résultat pour inclure un mot de passe (vide) pour satisfaire TypeScript
         const userWithEmptyPassword = {
           ...user,
@@ -126,6 +134,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   // Vérifier si l'utilisateur est admin
   const isAdmin = currentUser?.role === "admin";
+  
+  console.log("État actuel de l'authentification:", {
+    isAuthenticated: !!currentUser,
+    isAdmin,
+    currentUser
+  });
 
   return (
     <AuthContext.Provider

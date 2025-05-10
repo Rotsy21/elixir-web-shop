@@ -1,3 +1,4 @@
+
 import { MONGODB_CONFIG } from '@/config/mongoConfig';
 import { User } from '@/models/types';
 import { toast } from "sonner";
@@ -23,6 +24,7 @@ export const userService = {
       
       console.log("Récupération des utilisateurs depuis MongoDB");
       const response = await axios.get(API_URL);
+      console.log("Utilisateurs récupérés:", response.data);
       return response.data.map((user: any) => ({
         id: user._id,
         username: user.username,
@@ -33,14 +35,15 @@ export const userService = {
       }));
     } catch (error) {
       console.error("Erreur lors de la récupération des utilisateurs:", error);
-      throw error;
+      toast.error("Impossible de récupérer la liste des utilisateurs");
+      return [];
     }
   },
 
   /**
    * Ajoute un nouvel utilisateur
    */
-  addUser: async (user: Omit<User, 'id' | 'createdAt'>): Promise<User> => {
+  addUser: async (user: Omit<User, 'id' | 'createdAt'>): Promise<any> => {
     try {
       if (!MONGODB_CONFIG.isConnected) {
         console.warn("MongoDB non connecté. L'utilisateur sera stocké localement.");
@@ -67,27 +70,21 @@ export const userService = {
         
         toast.success("Le compte a été créé avec succès.");
         
-        return newUser;
+        return { success: true, id: newUser.id };
       }
       
       console.log("Ajout d'un utilisateur dans MongoDB:", user);
       const response = await axios.post(`${API_URL}/register`, user);
       
-      const newUser: User = {
-        id: response.data.user.id,
-        username: response.data.user.username,
-        email: response.data.user.email,
-        role: response.data.user.role,
-        password: '', // Champ vide pour la compatibilité
-        createdAt: response.data.user.createdAt
-      };
-      
       toast.success("Le compte a été créé avec succès.");
-      return newUser;
-    } catch (error) {
+      return { 
+        success: true, 
+        id: response.data.user.id || response.data.user._id 
+      };
+    } catch (error: any) {
       console.error("Erreur lors de l'ajout de l'utilisateur:", error);
-      toast.error(`Erreur lors de l'ajout de l'utilisateur: ${(error as any).response?.data?.message || (error as Error).message}`);
-      throw error;
+      toast.error(error.response?.data?.message || "Erreur lors de l'ajout de l'utilisateur");
+      return { success: false, error };
     }
   },
 
@@ -116,9 +113,22 @@ export const userService = {
       }
       
       console.log(`Mise à jour de l'utilisateur ${id} dans MongoDB:`, user);
-      return { id, ...user } as User;
+      const response = await axios.put(`${API_URL}/${id}`, user);
+      toast.success("L'utilisateur a été mis à jour avec succès.");
+      
+      const updatedUser = {
+        id: response.data._id,
+        username: response.data.username,
+        email: response.data.email,
+        role: response.data.role,
+        password: '', // Champ vide pour la compatibilité
+        createdAt: response.data.createdAt
+      };
+      
+      return updatedUser;
     } catch (error) {
       console.error("Erreur lors de la mise à jour de l'utilisateur:", error);
+      toast.error("Erreur lors de la mise à jour de l'utilisateur");
       throw error;
     }
   },
@@ -147,9 +157,12 @@ export const userService = {
       }
       
       console.log(`Suppression de l'utilisateur ${id} dans MongoDB`);
+      await axios.delete(`${API_URL}/${id}`);
+      toast.success("L'utilisateur a été supprimé avec succès.");
       return true;
     } catch (error) {
       console.error("Erreur lors de la suppression de l'utilisateur:", error);
+      toast.error("Erreur lors de la suppression de l'utilisateur");
       throw error;
     }
   }
