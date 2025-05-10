@@ -3,6 +3,9 @@ import { MONGODB_CONFIG } from '@/config/mongoConfig';
 import { Newsletter } from '@/models/types';
 import { toast } from "sonner";
 import { sanitizeInput, validateEmail } from '@/utils/securityUtils';
+import axios from 'axios';
+
+const API_URL = 'http://localhost:5000/api/newsletters';
 
 /**
  * Service pour gérer les inscriptions à la newsletter dans MongoDB
@@ -20,7 +23,12 @@ export const newsletterService = {
         return savedNewsletters ? JSON.parse(savedNewsletters) : [];
       }
       console.log("Récupération des inscriptions newsletter depuis MongoDB");
-      return [];
+      const response = await axios.get(API_URL);
+      return response.data.map((newsletter: any) => ({
+        id: newsletter._id,
+        email: newsletter.email,
+        createdAt: newsletter.createdAt
+      }));
     } catch (error) {
       console.error("Erreur lors de la récupération des inscriptions newsletter:", error);
       throw error;
@@ -69,30 +77,29 @@ export const newsletterService = {
       
       console.log("Ajout d'une inscription newsletter dans MongoDB:", sanitizedEmail);
       
-      // Vérifier si l'email existe déjà
-      const savedNewsletters = localStorage.getItem('newsletters');
-      const newsletters = savedNewsletters ? JSON.parse(savedNewsletters) : [];
-      const existingEmail = newsletters.find((n: Newsletter) => n.email === sanitizedEmail);
-      
-      if (existingEmail) {
-        toast.info("Cette adresse email est déjà inscrite à la newsletter.");
-        // Retourner l'inscription existante au lieu de lancer une erreur
-        return existingEmail;
+      try {
+        const response = await axios.post(API_URL, { email: sanitizedEmail });
+        
+        const newNewsletter: Newsletter = {
+          id: response.data._id,
+          email: response.data.email,
+          createdAt: response.data.createdAt
+        };
+        
+        toast.success("Votre inscription à la newsletter a été enregistrée.");
+        return newNewsletter;
+      } catch (err: any) {
+        if (err.response && err.response.status === 400) {
+          toast.info("Cette adresse email est déjà inscrite à la newsletter.");
+          // Retourner une inscription temporaire
+          return {
+            id: "existing",
+            email: sanitizedEmail,
+            createdAt: new Date().toISOString()
+          };
+        }
+        throw err;
       }
-      
-      const newNewsletter: Newsletter = {
-        id: crypto.randomUUID(),
-        email: sanitizedEmail,
-        createdAt: new Date().toISOString()
-      };
-      
-      // Sauvegarde locale pour démonstration
-      newsletters.push(newNewsletter);
-      localStorage.setItem('newsletters', JSON.stringify(newsletters));
-      
-      toast.success("Votre inscription à la newsletter a été enregistrée.");
-      
-      return newNewsletter;
     } catch (error) {
       console.error("Erreur lors de l'ajout de l'inscription newsletter:", error);
       toast.error("Erreur lors de l'inscription à la newsletter: " + (error as Error).message);

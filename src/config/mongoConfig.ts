@@ -1,6 +1,6 @@
 
 export const MONGODB_CONFIG = {
-  localConnectionString: "mongodb://localhost:27017/elixir_drinks",
+  localConnectionString: "mongodb://localhost:27017/beverage-shop",
   isConnected: false, // Nouvel indicateur pour suivre l'état de la connexion
   
   options: {
@@ -16,5 +16,10 @@ export const MONGODB_CONFIG = {
     contacts: "contacts",
     newsletters: "newsletters",
     settings: "settings"
+  },
+  
+  // Fonction pour définir l'état de connexion
+  setConnectionStatus(status: boolean) {
+    this.isConnected = status;
   }
 };

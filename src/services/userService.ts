@@ -1,7 +1,9 @@
-
 import { MONGODB_CONFIG } from '@/config/mongoConfig';
 import { User } from '@/models/types';
 import { toast } from "sonner";
+import axios from 'axios';
+
+const API_URL = 'http://localhost:5000/api/users';
 
 /**
  * Service pour gérer les utilisateurs dans MongoDB
@@ -18,8 +20,17 @@ export const userService = {
         const savedUsers = localStorage.getItem('users');
         return savedUsers ? JSON.parse(savedUsers) : [];
       }
+      
       console.log("Récupération des utilisateurs depuis MongoDB");
-      return [];
+      const response = await axios.get(API_URL);
+      return response.data.map((user: any) => ({
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        password: '', // Champ vide pour la compatibilité
+        createdAt: user.createdAt
+      }));
     } catch (error) {
       console.error("Erreur lors de la récupération des utilisateurs:", error);
       throw error;
@@ -60,16 +71,22 @@ export const userService = {
       }
       
       console.log("Ajout d'un utilisateur dans MongoDB:", user);
+      const response = await axios.post(`${API_URL}/register`, user);
       
       const newUser: User = {
-        ...user,
-        id: crypto.randomUUID(),
-        createdAt: new Date().toISOString()
+        id: response.data.user.id,
+        username: response.data.user.username,
+        email: response.data.user.email,
+        role: response.data.user.role,
+        password: '', // Champ vide pour la compatibilité
+        createdAt: response.data.user.createdAt
       };
       
+      toast.success("Le compte a été créé avec succès.");
       return newUser;
     } catch (error) {
       console.error("Erreur lors de l'ajout de l'utilisateur:", error);
+      toast.error(`Erreur lors de l'ajout de l'utilisateur: ${(error as any).response?.data?.message || (error as Error).message}`);
       throw error;
     }
   },

@@ -1,4 +1,3 @@
-
 /**
  * Service d'authentification sécurisé
  */
@@ -13,6 +12,9 @@ import {
 } from "@/utils/securityUtils";
 import { createAppError, ErrorType } from "@/utils/errorHandler";
 import { toast } from "@/hooks/use-toast";
+import axios from "axios";
+
+const API_URL = 'http://localhost:5000/api/users';
 
 // Simuler le stockage des jetons d'accès et de rafraîchissement
 // En production, utilisez un stockage sécurisé comme HttpOnly cookies
@@ -26,19 +28,6 @@ interface TokenStore {
 
 const tokenStore: TokenStore = {};
 
-// Simuler une liste d'adresses IP bloquées pour les tentatives d'attaque
-const blockedIPs: Set<string> = new Set();
-
-// Simuler un compteur de tentatives de connexion
-interface LoginAttempts {
-  [ipOrUserId: string]: {
-    count: number;
-    lastAttempt: number;
-  }
-}
-
-const loginAttempts: LoginAttempts = {};
-
 /**
  * Service sécurisé d'authentification
  */
@@ -48,48 +37,6 @@ export const authService = {
    */
   login: async (email: string, password: string, ipAddress = "127.0.0.1"): Promise<Omit<User, "password"> | null> => {
     try {
-      // Vérifier si l'IP est bloquée
-      if (blockedIPs.has(ipAddress)) {
-        logSecurityEvent(`Tentative de connexion depuis une IP bloquée: ${ipAddress}`, 'warning');
-        throw createAppError(
-          ErrorType.SECURITY,
-          `Tentative de connexion depuis une IP bloquée: ${ipAddress}`,
-          null,
-          403
-        );
-      }
-
-      // Vérifier le nombre de tentatives de connexion
-      if (loginAttempts[ipAddress]) {
-        const attempt = loginAttempts[ipAddress];
-        
-        // Si plus de 5 tentatives en moins de 15 minutes, bloquer temporairement
-        const fifteenMinutesAgo = Date.now() - 15 * 60 * 1000;
-        if (attempt.count >= 5 && attempt.lastAttempt > fifteenMinutesAgo) {
-          logSecurityEvent(`Trop de tentatives de connexion depuis: ${ipAddress}`, 'warning');
-          throw createAppError(
-            ErrorType.SECURITY,
-            "Trop de tentatives de connexion. Veuillez réessayer plus tard.",
-            null,
-            429
-          );
-        }
-        
-        // Réinitialiser le compteur si plus de 15 minutes depuis la dernière tentative
-        if (attempt.lastAttempt <= fifteenMinutesAgo) {
-          attempt.count = 0;
-        }
-        
-        attempt.count++;
-        attempt.lastAttempt = Date.now();
-      } else {
-        // Première tentative
-        loginAttempts[ipAddress] = {
-          count: 1,
-          lastAttempt: Date.now()
-        };
-      }
-
       // Validation de l'email et recherche d'injections
       if (!validateEmail(email) || detectInjectionAttempt(email)) {
         logSecurityEvent(`Tentative d'injection dans le champ email: ${email}`, 'warning', { ipAddress });
@@ -100,39 +47,41 @@ export const authService = {
           400
         );
       }
-
-      // En production, utilisez une fonction de hachage sécurisée pour comparer les mots de passe
-      // comme bcrypt, Argon2 ou PBKDF2
       
-      // Simuler la vérification d'authentification
-      const result = await mockLogin(email, password);
-      
-      if (result) {
-        // Réinitialiser le compteur de tentatives de connexion
-        if (loginAttempts[ipAddress]) {
-          loginAttempts[ipAddress].count = 0;
-        }
+      try {
+        const response = await axios.post(`${API_URL}/login`, { email, password });
         
         // Générer les jetons d'authentification
-        // Dans une implémentation réelle, stocker ces jetons dans des cookies HttpOnly
-        const userId = result.id;
+        const userId = response.data.user.id;
         const now = Date.now();
         const accessTokenExpire = now + (30 * 60 * 1000); // 30 minutes
         
         tokenStore[userId] = {
-          accessToken: `access_${Math.random().toString(36).slice(2)}`,
+          accessToken: response.data.token,
           refreshToken: `refresh_${Math.random().toString(36).slice(2)}`,
           expiresAt: accessTokenExpire
         };
         
         logSecurityEvent(`Connexion réussie pour: ${email}`, 'info', { userId });
         
-        // Ne jamais renvoyer le mot de passe
-        const { password: _, ...userWithoutPassword } = result;
-        return userWithoutPassword;
-      } else {
+        // Convertir la réponse API en objet User
+        const user: Omit<User, "password"> = {
+          id: response.data.user.id,
+          username: response.data.user.username,
+          email: response.data.user.email,
+          role: response.data.user.role,
+          createdAt: response.data.user.createdAt
+        };
+        
+        return user;
+      } catch (err: any) {
         // En cas d'échec, attendre un délai aléatoire pour prévenir les attaques par force brute
         await new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * 1000) + 200));
+        
+        console.error("Erreur de connexion:", err);
+        if (err.response) {
+          toast.error(err.response.data.message || "Échec de connexion");
+        }
         
         logSecurityEvent(`Échec de connexion pour: ${email}`, 'warning', { ipAddress });
         return null;
@@ -206,37 +155,32 @@ export const authService = {
         );
       }
       
-      // Vérifier si l'email existe déjà
-      const savedUsers = localStorage.getItem('users');
-      const users = savedUsers ? JSON.parse(savedUsers) : [];
-      const existingUser = users.find((u: User) => u.email === email);
-      
-      if (existingUser) {
-        toast({
-          title: "Erreur d'inscription",
-          description: "Cette adresse email est déjà utilisée",
-          variant: "destructive",
+      try {
+        const response = await axios.post(`${API_URL}/register`, {
+          username: sanitizedUsername,
+          email,
+          password
         });
-        return null;
-      }
-      
-      // En production, hachage sécurisé du mot de passe avant stockage
-      // Simuler l'inscription
-      const result = await mockRegister(sanitizedUsername, email, password);
-      
-      if (result) {
-        // Ajouter l'utilisateur à la liste des utilisateurs dans localStorage
-        users.push(result);
-        localStorage.setItem('users', JSON.stringify(users));
         
         logSecurityEvent(`Inscription réussie pour: ${email}`, 'info');
         
-        // Ne jamais renvoyer le mot de passe
-        const { password: _, ...userWithoutPassword } = result;
-        return userWithoutPassword;
+        // Convertir la réponse API en objet User
+        const user: Omit<User, "password"> = {
+          id: response.data.user.id,
+          username: response.data.user.username,
+          email: response.data.user.email,
+          role: response.data.user.role,
+          createdAt: response.data.user.createdAt
+        };
+        
+        return user;
+      } catch (err: any) {
+        console.error("Erreur d'inscription:", err);
+        if (err.response) {
+          toast.error(err.response.data.message || "Échec de l'inscription");
+        }
+        return null;
       }
-      
-      return null;
     } catch (error) {
       // Journaliser l'erreur sans exposer les détails sensibles
       logSecurityEvent("Erreur d'inscription", 'error', { error });

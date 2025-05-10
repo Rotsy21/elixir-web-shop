@@ -3,6 +3,9 @@ import { MONGODB_CONFIG } from '@/config/mongoConfig';
 import { ContactMessage } from '@/models/types';
 import { toast } from "sonner";
 import { sanitizeInput, validateEmail, detectInjectionAttempt } from '@/utils/securityUtils';
+import axios from 'axios';
+
+const API_URL = 'http://localhost:5000/api/contacts';
 
 /**
  * Service pour gérer les messages de contact dans MongoDB
@@ -20,7 +23,16 @@ export const contactService = {
         return savedContacts ? JSON.parse(savedContacts) : [];
       }
       console.log("Récupération des contacts depuis MongoDB");
-      return [];
+      const response = await axios.get(API_URL);
+      return response.data.map((contact: any) => ({
+        id: contact._id,
+        name: contact.name,
+        email: contact.email,
+        subject: contact.subject,
+        message: contact.message,
+        read: contact.read,
+        createdAt: contact.createdAt
+      }));
     } catch (error) {
       console.error("Erreur lors de la récupération des contacts:", error);
       throw error;
@@ -73,22 +85,19 @@ export const contactService = {
       }
       
       console.log("Ajout d'un message de contact dans MongoDB:", safeContact);
+      const response = await axios.post(API_URL, safeContact);
       
       const newContact: ContactMessage = {
-        ...safeContact,
-        id: crypto.randomUUID(),
-        read: false,
-        createdAt: new Date().toISOString()
+        id: response.data._id,
+        name: response.data.name,
+        email: response.data.email,
+        subject: response.data.subject,
+        message: response.data.message,
+        read: response.data.read,
+        createdAt: response.data.createdAt
       };
       
-      // Simuler l'ajout dans MongoDB
-      const savedContacts = localStorage.getItem('contacts');
-      const contacts = savedContacts ? JSON.parse(savedContacts) : [];
-      contacts.push(newContact);
-      localStorage.setItem('contacts', JSON.stringify(contacts));
-      
       toast.success("Votre message a été envoyé avec succès.");
-      
       return newContact;
     } catch (error) {
       console.error("Erreur lors de l'ajout du message de contact:", error);
