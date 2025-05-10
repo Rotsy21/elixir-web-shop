@@ -1,7 +1,7 @@
 
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
 import { User } from "@/models/types";
-import { authService } from "@/services/authService";
+import { authService } from "@/services/auth";
 import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 
