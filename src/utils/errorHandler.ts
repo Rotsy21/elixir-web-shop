@@ -4,7 +4,7 @@
  * Évite de divulguer des informations sensibles dans les messages d'erreur
  */
 
-import { logSecurityEvent } from './securityUtils';
+import { logSecurityEvent } from "./security";
 
 // Types d'erreurs
 export enum ErrorType {

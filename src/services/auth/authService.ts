@@ -1,4 +1,3 @@
-
 /**
  * Service d'authentification sécurisé
  * Version refactorisée et modulaire
@@ -11,7 +10,7 @@ import {
   validatePasswordStrength, 
   detectInjectionAttempt,
   logSecurityEvent 
-} from "@/utils/securityUtils";
+} from "@/utils/security";
 import { createAppError, ErrorType } from "@/utils/errorHandler";
 import { toast } from "sonner";
 import axios from "axios";

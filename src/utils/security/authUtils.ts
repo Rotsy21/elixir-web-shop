@@ -1,14 +1,36 @@
 
 /**
- * Security utilities related to authentication
+ * Authentication related security utilities
  */
-
-import { logSecurityEvent, validateEmail, detectInjectionAttempt } from "@/utils/security";
 
 /**
- * Rationnaliser l'accès en limitant les tentatives pour prévenir les attaques par force brute
+ * Vérifie si une action est autorisée pour un utilisateur
+ * @param userRole - Rôle de l'utilisateur
+ * @param requiredRole - Rôle requis pour l'action
  */
-export const authRateLimiter = (() => {
+export const isActionAuthorized = (userRole: string, requiredRole: string): boolean => {
+  const roleHierarchy = {
+    'admin': 3,
+    'manager': 2,
+    'user': 1,
+    'guest': 0
+  };
+
+  return roleHierarchy[userRole as keyof typeof roleHierarchy] >= 
+         roleHierarchy[requiredRole as keyof typeof roleHierarchy];
+};
+
+/**
+ * Crée un identifiant unique pour une session
+ */
+export const createSessionId = (): string => {
+  return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+};
+
+/**
+ * Limite les tentatives de connexion pour prévenir les attaques par force brute
+ */
+export const rateLimiter = (() => {
   const attempts: Record<string, { count: number; lastAttempt: number }> = {};
   const MAX_ATTEMPTS = 5;
   const LOCKOUT_TIME = 15 * 60 * 1000; // 15 minutes en millisecondes
@@ -40,21 +62,8 @@ export const authRateLimiter = (() => {
       attempts[ip].lastAttempt = now;
       return { allowed: true };
     },
-    
     resetAttempts: (ip: string): void => {
       delete attempts[ip];
     }
   };
 })();
-
-/**
- * Vérifier les données d'authentification pour la sécurité
- */
-export const validateAuthInputs = (email: string, ipAddress = "127.0.0.1") => {
-  // Validation de l'email et recherche d'injections
-  if (!validateEmail(email) || detectInjectionAttempt(email)) {
-    logSecurityEvent(`Tentative d'injection dans le champ email: ${email}`, 'warning', { ipAddress });
-    return false;
-  }
-  return true;
-};
